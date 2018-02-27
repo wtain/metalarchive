@@ -1,0 +1,54 @@
+import requests
+import json 
+import pandas as pd
+
+def parse_data(band_data):
+    """ For each band, we will parse the data to return some dictionary
+    """
+    data = {
+            'name': band_data[0].split("'>")[1].split("</")[0],
+            'country': band_data[1],
+            'genre': band_data[2],
+            'status': band_data[3].split('>')[1].split('<')[0],
+            'link': band_data[0].split("href='")[1].split("'>")[0]
+        }
+    return data
+
+def download_url(letter, display_start):
+    """
+    We'll be using this function to download a couple of data for a certain alphabet letter.
+    For example, if we insert 'a', this function will download data for bands that start with the letter A.
+    Besides that, the page only can handle 500 bands at once, so we have to change display_start until we 
+    aren't getting anything. We will test this by checking the length of the response.
+    """
+    letter = letter.upper()
+    display_start = display_start * 500
+    url = f"https://www.metal-archives.com/browse/ajax-letter/l/{letter}/json/1?sEcho=3&iColumns=4&sColumns=&iDisplayStart={display_start}&iDisplayLength=500&mDataProp_0=0&mDataProp_1=1&mDataProp_2=2&mDataProp_3=3&iSortCol_0=0&sSortDir_0=asc&iSortingCols=1&bSortable_0=true&bSortable_1=true&bSortable_2=true&bSortable_3=false&_=1519758159154"
+    data_json = json.loads(requests.get(url).text)['aaData'] 
+    if len(data_json) == 0:
+        return None
+    return list(map(parse_data, data_json))
+
+def download_letter(letter):
+    """
+    This function downloads data for a certain letter. It relies on download_url function.
+    """
+    letter_data = []
+    for i in range(1000):
+        print(i)
+        prov_data = download_url('A', i)
+        if prov_data is None:
+            pd.DataFrame(letter_data).to_csv(letter + '.csv', index=None)
+            return None
+        else:
+            letter_data = letter_data + prov_data
+
+
+
+#for i in 'ABCDEFGHIJKLMNOPQRSTUVXWYZ~':
+for i in 'FGHIJKLMNOPQRSTUVXWYZ~':
+    print(i)
+    download_letter(i)
+
+
+download_letter('NBR')
