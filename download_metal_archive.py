@@ -1,3 +1,4 @@
+import os
 import time
 
 import requests
@@ -42,7 +43,7 @@ def get_current_epoch_time():
     return epoch_time
 
 
-def download_letter(letter):
+def download_letter(output_dir, letter):
     """
     This function downloads data for a certain letter. It relies on download_url function.
     """
@@ -52,17 +53,20 @@ def download_letter(letter):
         try:
             prov_data = download_url(letter, i)
             if prov_data is None:
-                pd.DataFrame(letter_data).to_csv(f"{letter_fs}.csv", index=None)
+                pd.DataFrame(letter_data).to_csv(f"./{output_dir}/{letter_fs}.csv", index=None)
                 return None
             else:
                 letter_data = letter_data + prov_data
         except Exception as e:
             print(e)
 
-# for letter in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ~':
-for letter in 'YZ~':
+output_dir = 'output'
+
+os.makedirs('./output', exist_ok=True)
+
+for letter in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ~':
     print(f"Downloading for letter {letter}")
-    download_letter(letter)
+    download_letter(output_dir, letter)
 
 # Special case for '#'
-download_letter('NBR')
+download_letter(output_dir, 'NBR')
