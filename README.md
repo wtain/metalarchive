@@ -7,3 +7,12 @@ We just have to change two parameters of a link: https://www.metal-archives.com/
 We're doing it in python
 
 
+# Requirements
+
+```bash
+pip3 freeze > requirements.txt
+```
+
+```bash
+pip3 install -r requirements.txt
+```

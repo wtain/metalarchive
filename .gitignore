@@ -1,11 +1,12 @@
 .venv
 .idea
 
+results/
 *.csv
 
 *.session
 
-
+.env
 telegram_token.txt
 telegram_api_id.txt
 telegram_api_hash.txt

@@ -1,54 +1,101 @@
-import asyncio
 import csv
+import os
 from datetime import datetime
 
+from dotenv import load_dotenv
 from telethon import TelegramClient
+from telethon.tl.functions.messages import GetRepliesRequest
+from telethon.tl.functions.channels import GetFullChannelRequest
 
 
-def get_api_id():
-    with open("telegram_api_id.txt") as file:
-        return int(file.read())
+load_dotenv()
+
+TELEGRAM_API_ID = int(os.getenv('TELEGRAM_API_ID'))
+TELEGRAM_API_HASH = os.getenv('TELEGRAM_API_HASH')
+TELEGRAM_PHONE = os.getenv('TELEGRAM_PHONE')
+TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')  # unused now
+CHANNEL_NAME = os.getenv('CHANNEL_NAME')
+
+client = TelegramClient("session_name", TELEGRAM_API_ID, TELEGRAM_API_HASH)
 
 
-def get_phone():
-    with open("telegram_phone.txt") as file:
-        return file.read()
+async def get_post_comments_count(channel, message_id):
+    """
+    Returns the number of comments for a given channel post
+    """
+    try:
+        result = await client(GetRepliesRequest(
+            peer=channel,
+            msg_id=message_id,
+            offset_id=0,
+            offset_date=None,
+            add_offset=0,
+            limit=0,     # 0 = only count, don’t fetch messages
+            max_id=0,
+            min_id=0,
+            hash=0
+        ))
+        return result.count
+    except Exception as e:
+        print(f"Error fetching comments for post {message_id}: {e}")
+        return 0
 
-
-def get_api_hash():
-    with open("telegram_api_hash.txt") as file:
-        return file.read()
-
-
-# 1. Get your own API ID and HASH from https://my.telegram.org
-api_id = get_api_id()          # <- replace with your API ID
-api_hash = get_api_hash()  # <- replace with your API HASH
-phone = get_phone()   # <- replace with your phone number
-
-# 2. Create and start the client
-client = TelegramClient("session_name", api_id, api_hash)
-
-channel_name = "@blackholelogs"
 
 async def main():
     # Authenticate
-    await client.start(phone=phone)
+    await client.start(phone=TELEGRAM_PHONE)
 
     # Replace with your channel username or ID
-    channel = await client.get_entity(channel_name)
+    channel = await client.get_entity(CHANNEL_NAME)
+
+    full = await client(GetFullChannelRequest(channel))
+    linked_chat = full.chats[0] if full.chats else None  # not used actually...
+
+    if linked_chat:
+        print(f"✅ Found linked chat: {linked_chat.title} (ID {linked_chat.id})")
+    else:
+        print("⚠️ This channel has no linked discussion group")
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-    subs_file = f"subscribers_{timestamp}.csv"
-    posts_file = f"posts_{timestamp}.csv"
+    subs_file = f"results/subscribers/subscribers_{timestamp}.csv"
+    posts_file = f"results/posts/posts_{timestamp}.csv"
 
-    # ---- Get Subscribers List ----
-    print("Fetching subscribers...")
+    await export_subscribers(channel, subs_file)
 
-    # --- Export Subscribers ---
+    await export_posts(channel, posts_file)
+
+
+async def export_posts(channel, posts_file):
+
+    with open(posts_file, "w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        writer.writerow(["message_id", "date", "views", "forwards", "reactions", "comments", "text_excerpt"])
+
+        async for message in client.iter_messages(channel, limit=200):  # adjust limit
+            excerpt = (message.text[:50] + "...") if message.text and len(message.text) > 50 else (message.text or "")
+            reactions = message.reactions.to_json() if message.reactions else ""
+
+            # Get comment count (if linked chat exists)
+            comments = await get_post_comments_count(channel, message.id)
+
+            writer.writerow([
+                message.id,
+                message.date,
+                message.views or 0,
+                message.forwards or 0,
+                reactions,
+                comments,
+                excerpt.replace("\n", " ")
+            ])
+    print(f"✅ Posts exported to {posts_file}")
+
+
+async def export_subscribers(channel, subs_file):
     with open(subs_file, "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
         writer.writerow(["user_id", "username", "first_name", "last_name"])
+        print("Fetching subscribers...")
         async for user in client.iter_participants(channel):
             writer.writerow([
                 user.id,
@@ -58,22 +105,6 @@ async def main():
             ])
     print(f"✅ Subscribers exported to {subs_file}")
 
-    # --- Export Posts ---
-    with open(posts_file, "w", newline="", encoding="utf-8") as f:
-        writer = csv.writer(f)
-        writer.writerow(["message_id", "date", "views", "forwards", "reactions", "text_excerpt"])
-        async for message in client.iter_messages(channel, limit=200):  # adjust limit
-            excerpt = (message.text[:50] + "...") if message.text and len(message.text) > 50 else (message.text or "")
-            reactions = message.reactions.to_json() if message.reactions else ""
-            writer.writerow([
-                message.id,
-                message.date,
-                message.views or 0,
-                message.forwards or 0,
-                reactions,
-                excerpt.replace("\n", " ")
-            ])
-    print(f"✅ Posts exported to {posts_file}")
 
 with client:
     client.loop.run_until_complete(main())
