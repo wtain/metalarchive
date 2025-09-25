@@ -2,6 +2,7 @@ import requests
 import json
 import bs4
 
+
 # https://metal-api.dev/index.html
 class MetalArchivesApi:
 
@@ -13,7 +14,7 @@ class MetalArchivesApi:
         if result.status_code != 200:
             print(f"Warning: {result.status_code}")
             return []
-        return  json.loads(result.content)
+        return json.loads(result.content)
 
     def get_band(self, name):
         bands = self.search_by_name(name)
@@ -40,7 +41,13 @@ class MetalArchivesApi:
             release_name = link.string
             release_type = tds[1].string
             release_year = int(tds[2].string)
-            yield { "name": release_name, "type": release_type, "year": release_year, "album_id": album_id, "album_url": album_url }
+            yield {
+                "name": release_name,
+                "type": release_type,
+                "year": release_year,
+                "album_id": album_id,
+                "album_url": album_url
+            }
 
     def get_album_items(self, album_data):
         content = self._get_document(album_data['album_url'])
@@ -55,7 +62,11 @@ class MetalArchivesApi:
             name = tds[1].string.strip()
             lyrics_id = "".join(filter(str.isnumeric, tds[3].findChildren('a')[0]['href']))
             duration = tds[2].string
-            yield { "name": name, "duration": duration, "lyrics_id": lyrics_id }
+            yield {
+                "name": name,
+                "duration": duration,
+                "lyrics_id": lyrics_id
+            }
 
     def get_lyrics(self, lyrics_id):
         return ((requests.get(f"https://www.metal-archives.com/release/ajax-view-lyrics/id/{lyrics_id}")
@@ -77,4 +88,7 @@ class MetalArchivesApi:
             if not span:
                 continue
             score = int(span.string)
-            yield { "band_name": link.string, "score": score }
+            yield {
+                "band_name": link.string,
+                "score": score
+            }

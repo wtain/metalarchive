@@ -13,10 +13,13 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import (
     Message,
 )
+from dotenv import load_dotenv
 
 from MetalArchivesApi import MetalArchivesApi
 
-TOKEN = getenv("BOT_TOKEN")
+load_dotenv()
+
+TOKEN = getenv("TELEGRAM_TOKEN")
 
 form_router = Router()
 
@@ -88,8 +91,6 @@ async def process_band_name(message: Message, state: FSMContext) -> None:
         band = bands[0]
 
         await reply_band_details(message, metal_api, band)
-
-
 
 
 async def main():
