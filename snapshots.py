@@ -4,6 +4,10 @@ import pandas as pd
 import glob
 import os
 
+from storage_client.posts import save_posts_from_df
+from storage_client.subscribers import save_subscribers_from_df
+
+
 def load_snapshots(folder, mask):
     """
     Load all CSV files in a folder matching a mask into one DataFrame.
@@ -75,3 +79,5 @@ print(subs_snapshots[list(subs_snapshots.keys())[0]].head())  # first snapshot D
 print("\n📌 Combined multi-index dataframe:")
 print(subs_combined.head())
 
+save_posts_from_df(posts_combined)
+save_subscribers_from_df(subs_combined)

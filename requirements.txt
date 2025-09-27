@@ -18,6 +18,7 @@ multidict==6.6.4
 numpy==2.0.2
 pandas==2.2.3
 propcache==0.3.2
+psycopg2-binary==2.9.10
 pyaes==1.6.1
 pyasn1==0.6.1
 pydantic==2.11.9
@@ -29,6 +30,7 @@ requests==2.32.3
 rsa==4.9.1
 six==1.17.0
 soupsieve==2.6
+SQLAlchemy==2.0.43
 Telethon==1.41.2
 typing-inspection==0.4.1
 typing_extensions==4.15.0

@@ -1,0 +1,13 @@
+version: '3.8'
+services:
+  db:
+    image: timescale/timescaledb:latest-pg15
+    container_name: timescaledb
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: telegram_metrics
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data

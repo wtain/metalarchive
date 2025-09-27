@@ -95,15 +95,15 @@ def compare_posts(old_file, new_file):
 # post_changes = compare_posts("posts_20250914_093000.csv", "posts_20250915_093000.csv")
 # print(post_changes)
 
-views_report, reactions_report = compare_posts("results/posts/posts_20250919_173327.csv", "results/posts/posts_20250919_212502.csv")
-print(views_report)
-print(reactions_report)
+# views_report, reactions_report = compare_posts("results/posts/posts_20250919_173327.csv", "results/posts/posts_20250919_212502.csv")
+# print(views_report)
+# print(reactions_report)
 
 # Save reports as CSV
-views_report.to_csv("results/reports/diff_posts_views-20250919_173327-20250919_212502.csv", index=False, encoding="utf-8")
-reactions_report.to_csv("results/reports/diff_posts_reactions-20250919_173327-20250919_212502.csv", index=False, encoding="utf-8")
+# views_report.to_csv("results/reports/diff_posts_views-20250919_173327-20250919_212502.csv", index=False, encoding="utf-8")
+# reactions_report.to_csv("results/reports/diff_posts_reactions-20250919_173327-20250919_212502.csv", index=False, encoding="utf-8")
 
-joined, left = compare_subscribers("results/subscribers/subscribers_20250919_173327.csv",
-                                   "results/subscribers/subscribers_20250920_014518.csv")
+joined, left = compare_subscribers("results/subscribers/subscribers_20250926_111348.csv",
+                                   "results/subscribers/subscribers_20250926_143710.csv")
 print("New subscribers:\n", joined)
 print("Unsubscribed:\n", left)
