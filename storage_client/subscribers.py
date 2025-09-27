@@ -24,7 +24,7 @@ def add_subscriber(user_id, username=None, first_name=None, last_name=None, time
 def coerce_string(value) -> str:
     if type(value) is float and math.isnan(value):
         return ""
-    return ""
+    return value
 
 
 # --- Save a whole DataFrame of subscribers snapshot ---
@@ -36,9 +36,9 @@ def save_subscribers_from_df(df: pd.DataFrame):
             username=coerce_string(row.get("username")),
             first_name=coerce_string(row.get("first_name")),
             last_name=coerce_string(row.get("last_name")),
-            timestamp=pd.to_datetime(row["timestamp"]) if "timestamp" in row else datetime.utcnow(),
+            timestamp=timestamp[0],
         )
-        for _, row in df.iterrows()
+        for timestamp, row in df.iterrows()
     ]
     session.add_all(records)
     session.commit()

@@ -58,6 +58,7 @@ def load_snapshots_timeseries(folder, mask, time_format="%Y%m%d_%H%M%S"):
 
     return snapshots, combined
 
+
 # Example usage:
 subscribers_df = load_snapshots("results/subscribers", "subscribers_*.csv")
 posts_df = load_snapshots("results/posts", "posts_*.csv")

@@ -28,5 +28,6 @@ class Subscriber(Base):
     last_name = Column(String, nullable=True)
     timestamp = Column(DateTime, default=datetime.utcnow, index=True)
 
+
 # Create tables
 Base.metadata.create_all(engine)
