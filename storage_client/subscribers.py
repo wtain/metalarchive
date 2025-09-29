@@ -4,6 +4,7 @@ import pandas as pd
 from datetime import datetime
 
 from storage_client.models import SessionLocal, Subscriber, engine
+from storage_client.utils import coerce_string
 
 
 # --- Add a single subscriber record ---
@@ -19,12 +20,6 @@ def add_subscriber(user_id, username=None, first_name=None, last_name=None, time
     session.add(sub)
     session.commit()
     session.close()
-
-
-def coerce_string(value) -> str:
-    if type(value) is float and math.isnan(value):
-        return ""
-    return value
 
 
 # --- Save a whole DataFrame of subscribers snapshot ---

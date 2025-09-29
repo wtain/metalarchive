@@ -1,8 +1,11 @@
 import json
-import math
 
-from storage_client.models import SessionLocal, PostMetric, engine
+from sqlalchemy import distinct, select, func
+
+from storage_client.models import SessionLocal, PostMetric, engine, Subscriber
 import pandas as pd
+
+from storage_client.utils import coerce_int
 
 
 def add_post_metric(post_id, views, reactions, comments):
@@ -25,12 +28,6 @@ def count_reactions(reactions) -> int:
     return int(data["results"][0]['count'])
 
 
-def coerce_int(value) -> int:
-    if type(value) is float and math.isnan(value):
-        return 0
-    return int(value)
-
-
 def save_posts_from_df(df: pd.DataFrame):
     session = SessionLocal()
     records = [
@@ -46,6 +43,25 @@ def save_posts_from_df(df: pd.DataFrame):
     session.add_all(records)
     session.commit()
     session.close()
+
+
+# select t.timestamp, count(*) from subscribers s,
+# (select distinct timestamp from subscribers) t
+# where s.timestamp=t.timestamp
+# group by t.timestamp
+# order by t.timestamp desc;
+def subscribers_count_over_time():
+    session = SessionLocal()
+
+    q = (
+        session.query(
+            Subscriber.timestamp,
+            func.count(Subscriber.id)
+        )
+        .group_by(Subscriber.timestamp)
+        .order_by(Subscriber.timestamp)
+    )
+    return q.all()
 
 
 def load_posts_to_df():

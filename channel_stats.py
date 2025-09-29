@@ -7,6 +7,8 @@ from telethon import TelegramClient
 from telethon.tl.functions.messages import GetRepliesRequest
 from telethon.tl.functions.channels import GetFullChannelRequest
 
+from csv_saver.posts import PostsStatsCsvSaver
+from csv_saver.subscribers import SubscribersCsvSaver
 
 load_dotenv()
 
@@ -68,10 +70,7 @@ async def main():
 
 async def export_posts(channel, posts_file):
 
-    with open(posts_file, "w", newline="", encoding="utf-8") as f:
-        writer = csv.writer(f)
-        writer.writerow(["message_id", "date", "views", "forwards", "reactions", "comments", "text_excerpt"])
-
+    with PostsStatsCsvSaver(posts_file) as saver:
         async for message in client.iter_messages(channel, limit=200):  # adjust limit
             excerpt = (message.text[:50] + "...") if message.text and len(message.text) > 50 else (message.text or "")
             reactions = message.reactions.to_json() if message.reactions else ""
@@ -79,7 +78,7 @@ async def export_posts(channel, posts_file):
             # Get comment count (if linked chat exists)
             comments = await get_post_comments_count(channel, message.id)
 
-            writer.writerow([
+            saver.write_row(
                 message.id,
                 message.date,
                 message.views or 0,
@@ -87,22 +86,20 @@ async def export_posts(channel, posts_file):
                 reactions,
                 comments,
                 excerpt.replace("\n", " ")
-            ])
+            )
     print(f"✅ Posts exported to {posts_file}")
 
 
 async def export_subscribers(channel, subs_file):
-    with open(subs_file, "w", newline="", encoding="utf-8") as f:
-        writer = csv.writer(f)
-        writer.writerow(["user_id", "username", "first_name", "last_name"])
+    with SubscribersCsvSaver(subs_file) as saver:
         print("Fetching subscribers...")
         async for user in client.iter_participants(channel):
-            writer.writerow([
+            saver.write_row(
                 user.id,
                 user.username or "",
                 user.first_name or "",
                 user.last_name or ""
-            ])
+            )
     print(f"✅ Subscribers exported to {subs_file}")
 
 
