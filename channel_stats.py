@@ -9,6 +9,8 @@ from telethon.tl.functions.channels import GetFullChannelRequest
 
 from csv_saver.posts import PostsStatsCsvSaver
 from csv_saver.subscribers import SubscribersCsvSaver
+from database_saver.posts import PostsStatsDatabaseSaver
+from database_saver.subscribers import SubscribersDatabaseSaver
 
 load_dotenv()
 
@@ -63,14 +65,15 @@ async def main():
     subs_file = f"results/subscribers/subscribers_{timestamp}.csv"
     posts_file = f"results/posts/posts_{timestamp}.csv"
 
-    await export_subscribers(channel, subs_file)
+    await export_subscribers(channel, subs_file, timestamp)
 
-    await export_posts(channel, posts_file)
+    await export_posts(channel, posts_file, timestamp)
 
 
-async def export_posts(channel, posts_file):
+async def export_posts(channel, posts_file, timestamp):
 
-    with PostsStatsCsvSaver(posts_file) as saver:
+    # with PostsStatsCsvSaver(posts_file) as saver:
+    with PostsStatsDatabaseSaver() as saver:
         async for message in client.iter_messages(channel, limit=200):  # adjust limit
             excerpt = (message.text[:50] + "...") if message.text and len(message.text) > 50 else (message.text or "")
             reactions = message.reactions.to_json() if message.reactions else ""
@@ -90,8 +93,9 @@ async def export_posts(channel, posts_file):
     print(f"✅ Posts exported to {posts_file}")
 
 
-async def export_subscribers(channel, subs_file):
-    with SubscribersCsvSaver(subs_file) as saver:
+async def export_subscribers(channel, subs_file, timestamp):
+    # with SubscribersCsvSaver(subs_file) as saver:
+    with SubscribersDatabaseSaver(timestamp) as saver:
         print("Fetching subscribers...")
         async for user in client.iter_participants(channel):
             saver.write_row(

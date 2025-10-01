@@ -24,6 +24,8 @@ def add_post_metric(post_id, views, reactions, comments):
 def count_reactions(reactions) -> int:
     if type(reactions) is not str:
         return 0
+    if reactions == '':
+        return 0
     data = json.loads(reactions)
     return int(data["results"][0]['count'])
 
