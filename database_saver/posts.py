@@ -4,8 +4,9 @@ from storage_client.posts import count_reactions
 
 class PostsStatsDatabaseSaver:
 
-    def __init__(self):
+    def __init__(self, batch_id):
         self.records = []
+        self.batch_id = batch_id
 
     def write_row(self, id, date, views, forwards, reactions, comments, excerpt):
         self.records.append(PostMetric(
@@ -14,7 +15,9 @@ class PostsStatsDatabaseSaver:
             views=views,
             reactions=count_reactions(reactions),  # todo: store full structure
             comments=comments,
+            run_id=self.batch_id,
             # todo: add missing columns: forwards and excerpt
+            # todo: separate posts table
         ))
 
     def __enter__(self):

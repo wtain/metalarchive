@@ -10,6 +10,7 @@ from csv_saver.posts import PostsStatsCsvSaver
 from csv_saver.subscribers import SubscribersCsvSaver
 from database_saver.posts import PostsStatsDatabaseSaver
 from database_saver.subscribers import SubscribersDatabaseSaver
+from storage_client.models import BatchRun, SessionLocal
 
 load_dotenv()
 
@@ -66,9 +67,20 @@ async def main():
 
     saver_type = 'DATABASE'
 
-    await export_subscribers(channel, lambda: create_subscribers_saver(saver_type, subs_file, timestamp))
+    batch_id = start_batch()
 
-    await export_posts(channel, lambda: create_posts_saver(saver_type, posts_file, timestamp))
+    await export_subscribers(channel, lambda: create_subscribers_saver(saver_type, subs_file, timestamp, batch_id))
+
+    await export_posts(channel, lambda: create_posts_saver(saver_type, posts_file, timestamp, batch_id))
+
+
+def start_batch():
+    # start a new batch run
+    session = SessionLocal()
+    batch = BatchRun()
+    session.add(batch)
+    session.flush()  # ensures batch.id is populated
+    return batch.id
 
 
 async def export_posts(channel, create_saver):
@@ -92,16 +104,16 @@ async def export_posts(channel, create_saver):
             )
 
 
-def create_posts_saver(type, posts_file, timestamp):
+def create_posts_saver(type, posts_file, timestamp, batch_id):
     if type == 'DATABASE':
-        return PostsStatsDatabaseSaver()
+        return PostsStatsDatabaseSaver(batch_id)
     elif type == 'CSV':
         return PostsStatsCsvSaver(posts_file)
 
 
-def create_subscribers_saver(type, subs_file, timestamp):
+def create_subscribers_saver(type, subs_file, timestamp, batch_id):
     if type == 'DATABASE':
-        return SubscribersDatabaseSaver(timestamp)
+        return SubscribersDatabaseSaver(timestamp, batch_id)
     elif type == 'CSV':
         return SubscribersCsvSaver(subs_file)
 

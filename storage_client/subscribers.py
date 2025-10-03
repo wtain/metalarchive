@@ -3,6 +3,8 @@ import math
 import pandas as pd
 from datetime import datetime
 
+from sqlalchemy import func
+
 from storage_client.models import SessionLocal, Subscriber, engine
 from storage_client.utils import coerce_string
 
@@ -45,3 +47,22 @@ def load_subscribers_to_df():
     query = "SELECT user_id, username, first_name, last_name, timestamp FROM subscribers"
     df = pd.read_sql(query, engine)
     return df
+
+
+# select t.timestamp, count(*) from subscribers s,
+# (select distinct timestamp from subscribers) t
+# where s.timestamp=t.timestamp
+# group by t.timestamp
+# order by t.timestamp desc;
+def subscribers_count_over_time():
+    session = SessionLocal()
+
+    q = (
+        session.query(
+            Subscriber.timestamp,
+            func.count(Subscriber.id)
+        )
+        .group_by(Subscriber.timestamp)
+        .order_by(Subscriber.timestamp)
+    )
+    return q.all()

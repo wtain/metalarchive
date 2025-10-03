@@ -3,8 +3,9 @@ from storage_client.models import Subscriber, SessionLocal
 
 class SubscribersDatabaseSaver:
 
-    def __init__(self, timestamp):
+    def __init__(self, timestamp, batch_id):
         self.timestamp = timestamp
+        self.batch_id = batch_id
         self.records = []
 
     def write_row(self, id, username, first_name, last_name):
@@ -14,6 +15,7 @@ class SubscribersDatabaseSaver:
             first_name=first_name,
             last_name=last_name,
             timestamp=self.timestamp,
+            run_id=self.batch_id,
         ))
 
     def __enter__(self):

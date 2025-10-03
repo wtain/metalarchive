@@ -47,25 +47,6 @@ def save_posts_from_df(df: pd.DataFrame):
     session.close()
 
 
-# select t.timestamp, count(*) from subscribers s,
-# (select distinct timestamp from subscribers) t
-# where s.timestamp=t.timestamp
-# group by t.timestamp
-# order by t.timestamp desc;
-def subscribers_count_over_time():
-    session = SessionLocal()
-
-    q = (
-        session.query(
-            Subscriber.timestamp,
-            func.count(Subscriber.id)
-        )
-        .group_by(Subscriber.timestamp)
-        .order_by(Subscriber.timestamp)
-    )
-    return q.all()
-
-
 def load_posts_to_df():
     query = "SELECT post_id, timestamp, views, reactions, comments FROM posts_metrics"
     df = pd.read_sql(query, engine)
