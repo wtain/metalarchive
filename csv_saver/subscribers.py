@@ -21,3 +21,4 @@ class SubscribersCsvSaver:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.file.close()
+        print(f"✅ Subscribers exported to {subs_file}")

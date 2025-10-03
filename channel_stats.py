@@ -1,4 +1,3 @@
-import csv
 import os
 from datetime import datetime
 
@@ -20,7 +19,7 @@ TELEGRAM_PHONE = os.getenv('TELEGRAM_PHONE')
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')  # unused now
 CHANNEL_NAME = os.getenv('CHANNEL_NAME')
 
-client = TelegramClient("session_name", TELEGRAM_API_ID, TELEGRAM_API_HASH)
+client = TelegramClient("stats_session", TELEGRAM_API_ID, TELEGRAM_API_HASH)
 
 
 async def get_post_comments_count(channel, message_id):
@@ -65,15 +64,16 @@ async def main():
     subs_file = f"results/subscribers/subscribers_{timestamp}.csv"
     posts_file = f"results/posts/posts_{timestamp}.csv"
 
-    await export_subscribers(channel, subs_file, timestamp)
+    saver_type = 'DATABASE'
 
-    await export_posts(channel, posts_file, timestamp)
+    await export_subscribers(channel, lambda: create_subscribers_saver(saver_type, subs_file, timestamp))
+
+    await export_posts(channel, lambda: create_posts_saver(saver_type, posts_file, timestamp))
 
 
-async def export_posts(channel, posts_file, timestamp):
+async def export_posts(channel, create_saver):
 
-    # with PostsStatsCsvSaver(posts_file) as saver:
-    with PostsStatsDatabaseSaver() as saver:
+    with create_saver() as saver:
         async for message in client.iter_messages(channel, limit=200):  # adjust limit
             excerpt = (message.text[:50] + "...") if message.text and len(message.text) > 50 else (message.text or "")
             reactions = message.reactions.to_json() if message.reactions else ""
@@ -90,12 +90,24 @@ async def export_posts(channel, posts_file, timestamp):
                 comments,
                 excerpt.replace("\n", " ")
             )
-    print(f"✅ Posts exported to {posts_file}")
 
 
-async def export_subscribers(channel, subs_file, timestamp):
-    # with SubscribersCsvSaver(subs_file) as saver:
-    with SubscribersDatabaseSaver(timestamp) as saver:
+def create_posts_saver(type, posts_file, timestamp):
+    if type == 'DATABASE':
+        return PostsStatsDatabaseSaver()
+    elif type == 'CSV':
+        return PostsStatsCsvSaver(posts_file)
+
+
+def create_subscribers_saver(type, subs_file, timestamp):
+    if type == 'DATABASE':
+        return SubscribersDatabaseSaver(timestamp)
+    elif type == 'CSV':
+        return SubscribersCsvSaver(subs_file)
+
+
+async def export_subscribers(channel, create_saver):
+    with create_saver() as saver:
         print("Fetching subscribers...")
         async for user in client.iter_participants(channel):
             saver.write_row(
@@ -104,7 +116,6 @@ async def export_subscribers(channel, subs_file, timestamp):
                 user.first_name or "",
                 user.last_name or ""
             )
-    print(f"✅ Subscribers exported to {subs_file}")
 
 
 with client:

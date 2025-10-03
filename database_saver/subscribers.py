@@ -24,3 +24,4 @@ class SubscribersDatabaseSaver:
         session.add_all(self.records)
         session.commit()
         session.close()
+        print(f"✅ Subscribers exported to database")

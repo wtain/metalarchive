@@ -25,3 +25,4 @@ class PostsStatsDatabaseSaver:
         session.add_all(self.records)
         session.commit()
         session.close()
+        print(f"✅ Posts exported to database")
