@@ -3,7 +3,8 @@ from storage_client.models import Subscriber, SessionLocal
 
 class SubscribersDatabaseSaver:
 
-    def __init__(self, timestamp, batch_id):
+    def __init__(self, session, timestamp, batch_id):
+        self.session = session
         self.timestamp = timestamp
         self.batch_id = batch_id
         self.records = []
@@ -22,8 +23,7 @@ class SubscribersDatabaseSaver:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        session = SessionLocal()
-        session.add_all(self.records)
-        session.commit()
-        session.close()
+        self.session.add_all(self.records)
+        # self.session.commit()
+        # self.session.close()
         print(f"✅ Subscribers exported to database")

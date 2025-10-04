@@ -4,7 +4,8 @@ from storage_client.posts import count_reactions
 
 class PostsStatsDatabaseSaver:
 
-    def __init__(self, batch_id):
+    def __init__(self, session, batch_id):
+        self.session = session
         self.records = []
         self.batch_id = batch_id
 
@@ -24,8 +25,7 @@ class PostsStatsDatabaseSaver:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        session = SessionLocal()
-        session.add_all(self.records)
-        session.commit()
-        session.close()
+        self.session.add_all(self.records)
+        # self.session.commit()
+        # self.session.close()
         print(f"✅ Posts exported to database")
