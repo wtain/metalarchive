@@ -59,10 +59,10 @@ def subscribers_count_over_time():
 
     q = (
         session.query(
-            Subscriber.timestamp,
+            Subscriber.run_id,
             func.count(Subscriber.id)
         )
-        .group_by(Subscriber.timestamp)
-        .order_by(Subscriber.timestamp)
+        .group_by(Subscriber.run_id)
+        .order_by(Subscriber.run_id.desc())
     )
     return q.all()

@@ -1,6 +1,7 @@
 import os
 from datetime import datetime
 
+from cryptography.fernet import Fernet
 from dotenv import load_dotenv
 from telethon import TelegramClient
 from telethon.tl.functions.messages import GetRepliesRequest
@@ -19,8 +20,23 @@ TELEGRAM_API_HASH = os.getenv('TELEGRAM_API_HASH')
 TELEGRAM_PHONE = os.getenv('TELEGRAM_PHONE')
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')  # unused now
 CHANNEL_NAME = os.getenv('CHANNEL_NAME')
+SERVER_TYPE = os.getenv('SAVER_TYPE') or 'DATABASE'
+ENCRYPTION_KEY = os.getenv('ENCRYPTION_KEY')
 
-client = TelegramClient("stats_session", TELEGRAM_API_ID, TELEGRAM_API_HASH)
+# todo: wrap encryption and session
+enc_key = ENCRYPTION_KEY.encode()
+fernet = Fernet(enc_key)
+
+with open("stats_session.session.enc", "rb") as f:
+    encrypted = f.read()
+
+decrypted = fernet.decrypt(encrypted)
+
+# Write to a temp file for Telethon to use
+with open("/tmp/stats_session.session", "wb") as f:
+    f.write(decrypted)
+
+client = TelegramClient("/tmp/stats_session.session", TELEGRAM_API_ID, TELEGRAM_API_HASH)
 
 
 async def get_post_comments_count(channel, message_id):
@@ -65,15 +81,15 @@ async def main():
     subs_file = f"results/subscribers/subscribers_{timestamp}.csv"
     posts_file = f"results/posts/posts_{timestamp}.csv"
 
-    saver_type = 'DATABASE'
+    # saver_type = 'DATABASE'
 
     # todo: wrap
     session = SessionLocal()
     batch_id = start_batch(session)
 
-    await export_subscribers(channel, lambda: create_subscribers_saver(session, saver_type, subs_file, timestamp, batch_id))
+    await export_subscribers(channel, lambda: create_subscribers_saver(session, SERVER_TYPE, subs_file, timestamp, batch_id))
 
-    await export_posts(channel, lambda: create_posts_saver(session, saver_type, posts_file, timestamp, batch_id))
+    await export_posts(channel, lambda: create_posts_saver(session, SERVER_TYPE, posts_file, timestamp, batch_id))
 
     session.commit()
     session.close()

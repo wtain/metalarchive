@@ -10,7 +10,9 @@ attrs==25.3.0
 beautifulsoup4==4.12.3
 bs4==0.0.2
 certifi==2024.12.14
+cffi==2.0.0
 charset-normalizer==3.4.1
+cryptography==46.0.2
 dotenv==0.9.9
 frozenlist==1.7.0
 idna==3.10
@@ -24,6 +26,7 @@ propcache==0.3.2
 psycopg2-binary==2.9.10
 pyaes==1.6.1
 pyasn1==0.6.1
+pycparser==2.23
 pydantic==2.11.9
 pydantic_core==2.33.2
 python-dateutil==2.9.0.post0

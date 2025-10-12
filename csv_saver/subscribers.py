@@ -4,6 +4,7 @@ import csv
 class SubscribersCsvSaver:
 
     def __init__(self, subs_file):
+        self.subs_file = subs_file
         self.file = open(subs_file, "w", newline="", encoding="utf-8")
         self.writer = csv.writer(self.file)
         self.writer.writerow(["user_id", "username", "first_name", "last_name"])
@@ -21,4 +22,4 @@ class SubscribersCsvSaver:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.file.close()
-        print(f"✅ Subscribers exported to {subs_file}")
+        print(f"✅ Subscribers exported to {self.subs_file}")

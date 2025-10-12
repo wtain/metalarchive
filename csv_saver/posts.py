@@ -4,6 +4,7 @@ import csv
 class PostsStatsCsvSaver:
 
     def __init__(self, posts_file):
+        self.posts_file = posts_file
         self.file = open(posts_file, "w", newline="", encoding="utf-8")
         self.writer = csv.writer(self.file)
         self.writer.writerow(["message_id", "date", "views", "forwards", "reactions", "comments", "text_excerpt"])
@@ -24,4 +25,4 @@ class PostsStatsCsvSaver:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.file.close()
-        print(f"✅ Posts exported to {posts_file}")
+        print(f"✅ Posts exported to {self.posts_file}")
