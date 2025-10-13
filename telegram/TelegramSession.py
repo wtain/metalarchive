@@ -10,34 +10,33 @@ STATS_SESSION_SESSION = "/tmp/stats_session.session"
 class TelegramSession:
 
     def __init__(self, encryptionKeyString):
+        self.session_encrypted = SESSION_SESSION_ENC
+        self.session_decrypted = STATS_SESSION_SESSION
         self.encryptionKey = encryptionKeyString.encode()
 
     def __enter__(self):
-        encrypted = TelegramSession.read_encrypted()
-        decrypted = TelegramSession.decrypt(encrypted)
-        TelegramSession.store_decrypted(decrypted)
+        encrypted = self.read_encrypted()
+        decrypted = self.decrypt(encrypted)
+        self.store_decrypted(decrypted)
+        return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        TelegramSession.delete_session()
+        self.delete_session()
 
-    @staticmethod
-    def read_encrypted():
-        with open(SESSION_SESSION_ENC, "rb") as f:
+    def read_encrypted(self):
+        with open(self.session_encrypted, "rb") as f:
             return f.read()
 
     def decrypt(self, encrypted):
         fernet = Fernet(self.encryptionKey)
         return fernet.decrypt(encrypted)
 
-    @staticmethod
-    def store_decrypted(decrypted):
-        with open(STATS_SESSION_SESSION, "wb") as f:
+    def store_decrypted(self, decrypted):
+        with open(self.session_decrypted, "wb") as f:
             f.write(decrypted)
 
-    @staticmethod
-    def delete_session():
-        os.remove(STATS_SESSION_SESSION)
+    def delete_session(self):
+        os.remove(self.session_decrypted)
 
-    @staticmethod
-    def get_session_file():
-        return STATS_SESSION_SESSION
+    def get_session_file(self):
+        return self.session_decrypted
