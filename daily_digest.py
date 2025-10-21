@@ -1,9 +1,10 @@
 from datetime import datetime, timedelta
+from operator import and_
 
 from sqlalchemy import func, or_
 from sqlalchemy.orm import aliased
 
-from storage_client.models import SessionLocal, BatchRun, PostMetric
+from storage_client.models import SessionLocal, BatchRun, PostMetric, Subscriber
 
 
 def get_last_run(day):
@@ -20,7 +21,7 @@ def get_last_run(day):
         .order_by(BatchRun.timestamp.desc())
         .first()
     )
-    return last_run.id
+    return last_run.id if last_run else None
 
 
 def get_post_diffs(session, old_run_id, new_run_id):
@@ -41,8 +42,8 @@ def get_post_diffs(session, old_run_id, new_run_id):
             (func.coalesce(p2.comments, 0) - func.coalesce(p1.comments, 0)).label("comments_diff"),
         )
         .outerjoin(p2, p1.post_id == p2.post_id)
-        .filter(or_(p1.run_id == old_run_id, p1.run_id == None))   # left side
-        .filter(or_(p2.run_id == new_run_id, p2.run_id == None))   # right side
+        .filter(or_(p1.run_id == old_run_id, p1.run_id is None))   # left side
+        .filter(or_(p2.run_id == new_run_id, p2.run_id is None))   # right side
     )
 
     query = query.filter(
@@ -54,6 +55,70 @@ def get_post_diffs(session, old_run_id, new_run_id):
     )
 
     return query.all()
+
+
+def get_subscribers_diffs(session, old_run_id, new_run_id):
+    p1 = aliased(Subscriber)
+    p2 = aliased(Subscriber)
+
+    query_removed = (
+        session.query(
+            func.coalesce(p1.user_id, p2.user_id).label("user_id"),
+            p1.user_id.label("user_id_old"),
+            p2.user_id.label("user_id_new"),
+            p1.first_name,
+            p2.first_name,
+        )
+        .outerjoin(p2, and_(
+                p1.user_id == p2.user_id,
+                or_(p2.run_id == new_run_id, p2.run_id is None)
+            ),
+            full=True)
+        # .filter(
+        #     or_(
+        #         or_(p1.run_id == old_run_id, p1.run_id is None),
+        #         or_(p2.run_id == new_run_id, p2.run_id is None)
+        #     )
+        # )
+        .filter(or_(p1.run_id == old_run_id, p1.run_id is None))   # left side
+        # .filter(or_(p2.run_id == new_run_id, p2.run_id is None))   # right side
+    )
+
+    query_added = (
+        session.query(
+            func.coalesce(p1.user_id, p2.user_id).label("user_id"),
+            p1.user_id.label("user_id_old"),
+            p2.user_id.label("user_id_new"),
+            p1.first_name,
+            p2.first_name,
+        )
+        .outerjoin(p2, and_(
+            p1.user_id == p2.user_id,
+            or_(p2.run_id == old_run_id, p2.run_id is None)
+        ),
+                   full=True)
+        # .filter(
+        #     or_(
+        #         or_(p1.run_id == old_run_id, p1.run_id is None),
+        #         or_(p2.run_id == new_run_id, p2.run_id is None)
+        #     )
+        # )
+        .filter(or_(p1.run_id == new_run_id, p1.run_id is None))  # left side
+        # .filter(or_(p2.run_id == new_run_id, p2.run_id is None))   # right side
+    )
+
+    added = query_added.filter(p2.user_id.is_(None)).all()
+    removed = query_removed.filter(p2.user_id.is_(None)).all()
+
+    # query = query.filter(
+    #     or_(
+    #         (func.coalesce(p2.views, 0) - func.coalesce(p1.views, 0)) > 0,
+    #         (func.coalesce(p2.reactions, 0) - func.coalesce(p1.reactions, 0)) > 0,
+    #         (func.coalesce(p2.comments, 0) - func.coalesce(p1.comments, 0)) > 0
+    #     )
+    # )
+
+    return { "new": added, "removed": removed }
 
 
 """
@@ -72,13 +137,32 @@ def daily_digest():
     now = datetime.now()
     yesterday = now - timedelta(days=1)
     week_ago = now - timedelta(days=7)
+    month_ago = now - timedelta(days=30)
     latest_run_id = get_last_run(now)
     reference_run_id = get_last_run(yesterday)
     reference_run_id2 = get_last_run(week_ago)
+    reference_run_id3 = get_last_run(month_ago)
+    print(f"Latest run id: {latest_run_id}")
+    print(f"Yesterday run id: {reference_run_id}")
+    print(f"Last week run id: {reference_run_id2}")
+    print(f"Last month run id: {reference_run_id3}")
     # print(reference_run_id, latest_run_id)
     session = SessionLocal()
-    show_diff(latest_run_id, reference_run_id, session)
-    show_diff(latest_run_id, reference_run_id2, session)
+
+    if reference_run_id:
+        show_diff(latest_run_id, reference_run_id, session)
+        diff_day = get_subscribers_diffs(session, reference_run_id, latest_run_id)
+        print(f"Daily diff: {diff_day}")
+
+    if reference_run_id2:
+        show_diff(latest_run_id, reference_run_id2, session)
+        diff_week = get_subscribers_diffs(session, reference_run_id2, latest_run_id)
+        print(f"Weekly diff: {diff_week}")
+
+    if reference_run_id3:
+        show_diff(latest_run_id, reference_run_id3, session)
+        diff_month = get_subscribers_diffs(session, reference_run_id3, latest_run_id)
+        print(f"Monthly diff: {diff_month}")
 
 
 def show_diff(latest_run_id, reference_run_id, session):

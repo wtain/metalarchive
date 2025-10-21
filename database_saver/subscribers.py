@@ -15,7 +15,7 @@ class SubscribersDatabaseSaver:
             username=username,
             first_name=first_name,
             last_name=last_name,
-            timestamp=self.timestamp,
+            timestamp=self.timestamp,  #  todo: not needed here as long as we have it in the batch table
             run_id=self.batch_id,
         ))
 

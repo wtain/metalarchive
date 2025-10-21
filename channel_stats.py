@@ -7,7 +7,7 @@ from csv_saver.posts import PostsStatsCsvSaver
 from csv_saver.subscribers import SubscribersCsvSaver
 from database_saver.posts import PostsStatsDatabaseSaver
 from database_saver.subscribers import SubscribersDatabaseSaver
-from storage_client.models import BatchRun, SessionLocal
+from storage_client.DatabaseSession import DatabaseSession
 from telegram.TelegramSession import TelegramSession
 from telegram.telegram_client import TelegramTelethonClient
 
@@ -18,7 +18,7 @@ TELEGRAM_API_HASH = os.getenv('TELEGRAM_API_HASH')
 TELEGRAM_PHONE = os.getenv('TELEGRAM_PHONE')
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')  # unused now
 CHANNEL_NAME = os.getenv('CHANNEL_NAME')
-SERVER_TYPE = os.getenv('SAVER_TYPE') or 'DATABASE'
+SAVER_TYPE = os.getenv('SAVER_TYPE') or 'DATABASE'
 ENCRYPTION_KEY = os.getenv('ENCRYPTION_KEY')
 
 with TelegramSession(ENCRYPTION_KEY) as encrypted_session:
@@ -33,37 +33,30 @@ with TelegramSession(ENCRYPTION_KEY) as encrypted_session:
         channel = await telegram_client.get_channel(CHANNEL_NAME)
 
         # cache this?
-        linked_chat = await telegram_client.get_linked_chat(channel)
+        # linked_chat = await telegram_client.get_linked_chat(channel)
+        #
+        # if linked_chat:
+        #     print(f"✅ Found linked chat: {linked_chat.title} (ID {linked_chat.id})")
+        # else:
+        #     print("⚠️ This channel has no linked discussion group")
 
-        if linked_chat:
-            print(f"✅ Found linked chat: {linked_chat.title} (ID {linked_chat.id})")
-        else:
-            print("⚠️ This channel has no linked discussion group")
+        # timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-
-        subs_file = f"results/subscribers/subscribers_{timestamp}.csv"
-        posts_file = f"results/posts/posts_{timestamp}.csv"
+        # subs_file = f"results/subscribers/subscribers_{timestamp}.csv"
+        # posts_file = f"results/posts/posts_{timestamp}.csv"
 
         # saver_type = 'DATABASE'
 
-        # todo: wrap
-        session = SessionLocal()
-        batch_id = start_batch(session)
+        # todo: check SAVER_TYPE here and create appropriate wrapper
+        with DatabaseSession() as session_wrapper:
 
-        await export_subscribers(channel, lambda: create_subscribers_saver(session, SERVER_TYPE, subs_file, timestamp, batch_id))
+            await export_subscribers(channel, lambda: session_wrapper.create_subscribers_saver())
 
-        await export_posts(channel, lambda: create_posts_saver(session, SERVER_TYPE, posts_file, timestamp, batch_id))
+            await export_posts(channel, lambda: session_wrapper.create_posts_saver())
 
-        session.commit()
-        session.close()
-
-
-    def start_batch(session):
-        batch = BatchRun()
-        session.add(batch)
-        session.flush()  # ensures batch.id is populated
-        return batch.id
+            # await export_subscribers(channel, lambda: create_subscribers_saver(session_wrapper.session, SAVER_TYPE, subs_file, timestamp, session_wrapper.batch_id))
+            #
+            # await export_posts(channel, lambda: create_posts_saver(session_wrapper.session, SAVER_TYPE, posts_file, timestamp, session_wrapper.batch_id))
 
 
     async def export_posts(channel, create_saver):

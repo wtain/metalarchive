@@ -5,6 +5,8 @@ results/
 *.csv
 
 *.session
+# Not storing encrypted session for now
+*.enc
 
 .env
 telegram_token.txt
