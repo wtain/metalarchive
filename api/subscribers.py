@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from db.session import get_db
+from storage_client.subscribers import subscribers_count_over_time
 
 router = APIRouter()
 
@@ -17,7 +18,10 @@ def get_subscribers_count_over_time(
     """
     # Example placeholder
     # data = get_subscribers_count_over_time_impl(db, period)
-    data = []  # <--- your logic here
+    # data = []  # <--- your logic here
+    # todo: pass db into this
+    data = list(map(lambda t: [t[0], t[1]], subscribers_count_over_time()))
+    # todo: join with batch_runs and extract timestamp
     return {"period": period, "data": data}
 
 

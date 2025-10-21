@@ -118,8 +118,12 @@ def get_subscribers_diffs(session, old_run_id, new_run_id):
     #     )
     # )
 
-    return { "new": added, "removed": removed }
+    return { "new": to_list(added), "removed": to_list(removed) }
 
+
+def to_list(t):
+    # return list(map(lambda t: list(map(lambda x: x or "(Unknown)", t)), t))
+    return list(map(list, t))
 
 """
 Дайджест за день, за неделю
