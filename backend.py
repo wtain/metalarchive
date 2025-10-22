@@ -1,12 +1,12 @@
 import uvicorn
 from fastapi import FastAPI
-from api import subscribers, reactions
+from api import subscribers, reports
 
 app = FastAPI(title="Analytics API")
 
 # Routers
 app.include_router(subscribers.router, prefix="/subscribers", tags=["Subscribers"])
-app.include_router(reactions.router, prefix="/reactions", tags=["Reactions"])
+app.include_router(reports.router, prefix="/reports", tags=["Digest"])
 
 
 @app.get("/")

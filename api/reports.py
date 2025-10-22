@@ -9,18 +9,11 @@ from db.session import get_db
 router = APIRouter()
 
 
-@router.get("/changes")
-def get_reactions_changes(
+@router.get("/digest")
+def get_digest(
     period: str = "daily",  # or "weekly", "monthly"
     db: Session = Depends(get_db)
 ):
-    """
-    Returns changes in post reactions for given period.
-    TODO: Replace with your implementation.
-    """
-    # Example placeholder
-    # data = get_reactions_changes_impl(db, period)
-
     now = datetime.now()
     days = 1
     if period == "weekly":
