@@ -13,7 +13,7 @@ def get_subscribers_count_over_time(
     db: Session = Depends(get_db)
 ):
     # todo: pass db into this
-    data = list(map(lambda t: [t[0], t[1]], subscribers_count_over_time()))
-    # todo: join with batch_runs and extract timestamp
+    # data = list(map(lambda t: [t[0], t[1]], subscribers_count_over_time()))
+    data = subscribers_count_over_time()
     return {"period": period, "data": data}
 

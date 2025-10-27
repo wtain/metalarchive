@@ -25,10 +25,16 @@ if DATABASE_URL:
         subscribers = relationship("Subscriber", back_populates="batch_run")
 
 
+    class Post(Base):
+        __tablename__ = "posts"
+        id = Column(Integer, primary_key=True, autoincrement=True)
+        text = Column(String)
+
+
     class PostMetric(Base):
         __tablename__ = "posts_metrics"
         id = Column(Integer, primary_key=True, autoincrement=True)
-        post_id = Column(BigInteger, index=True)
+        post_id = Column(Integer, ForeignKey("posts.id"), index=True)
         # todo: remove
         timestamp = Column(DateTime, default=datetime.utcnow, index=True)
         views = Column(Integer, default=0)
@@ -38,6 +44,7 @@ if DATABASE_URL:
         run_id = Column(Integer, ForeignKey("batch_runs.id"), nullable=False)
 
         batch_run = relationship("BatchRun", back_populates="posts")
+        post = relationship("Post")
 
 
     class Subscriber(Base):

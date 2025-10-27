@@ -2,8 +2,8 @@ import React from "react";
 import { LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 
 export interface ChartDataPoint {
-  date: string;
-  value: number;
+  timestamp: string;
+  count: number;
 }
 
 interface ChartCardProps {
@@ -18,10 +18,10 @@ export default function ChartCard({ title, data }: ChartCardProps) {
       <ResponsiveContainer width="100%" height={300}>
         <LineChart data={data}>
           <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="date" />
+          <XAxis dataKey="timestamp" />
           <YAxis />
           <Tooltip />
-          <Line type="monotone" dataKey="value" stroke="#2563eb" strokeWidth={2} />
+          <Line type="monotone" dataKey="count" stroke="#2563eb" strokeWidth={2} />
         </LineChart>
       </ResponsiveContainer>
     </div>

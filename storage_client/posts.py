@@ -1,7 +1,5 @@
 import json
 
-from sqlalchemy import distinct, select, func
-
 from storage_client.models import SessionLocal, PostMetric, engine, Subscriber
 import pandas as pd
 

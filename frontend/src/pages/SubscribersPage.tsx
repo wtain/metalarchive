@@ -9,7 +9,13 @@ export default function SubscribersPage() {
 
   useEffect(() => {
     axios
-      .get<{ data: ChartDataPoint[] }>(`/api/subscribers/count-over-time?period=${period}`)
+      .get<{ data: ChartDataPoint[] }>(`http://127.0.0.1:8001/api/subscribers/count-over-time?period=${period}`, {
+          mode: 'no-cors',
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Content-Type': 'application/json',
+          },
+      })
       .then((res) => setData(res.data.data))
       .catch(console.error);
   }, [period]);

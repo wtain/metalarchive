@@ -1,11 +1,11 @@
-import math
 
 import pandas as pd
 from datetime import datetime
 
 from sqlalchemy import func
+from sqlalchemy.orm import aliased
 
-from storage_client.models import SessionLocal, Subscriber, engine
+from storage_client.models import SessionLocal, Subscriber, engine, BatchRun
 from storage_client.utils import coerce_string
 
 
@@ -56,13 +56,25 @@ def load_subscribers_to_df():
 # order by t.timestamp desc;
 def subscribers_count_over_time():
     session = SessionLocal()
+    subscriber = aliased(Subscriber)
+    batch_run = aliased(BatchRun)
 
     q = (
         session.query(
-            Subscriber.run_id,
-            func.count(Subscriber.id)
+            batch_run.timestamp,
+            func.count(subscriber.id)
         )
-        .group_by(Subscriber.run_id)
-        .order_by(Subscriber.run_id.desc())
+        .join(subscriber, batch_run.id == subscriber.run_id)
+        .group_by(batch_run.timestamp)
+        .order_by(batch_run.timestamp)
     )
-    return q.all()
+
+    # q = (
+    #     session.query(
+    #         Subscriber.run_id,
+    #         func.count(Subscriber.id)
+    #     )
+    #     .group_by(Subscriber.run_id)
+    #     .order_by(Subscriber.run_id.desc())
+    # )
+    return list(map(lambda record: { "timestamp": record[0], "count": record[1] }, q.all()))

@@ -8,6 +8,10 @@ from db.session import get_db
 
 router = APIRouter()
 
+# total views/reactions/comments per day
+# top content
+# extract post title and image
+# single post views, reactions and comments over time
 
 @router.get("/digest")
 def get_digest(
@@ -16,7 +20,9 @@ def get_digest(
 ):
     now = datetime.now()
     days = 1
-    if period == "weekly":
+    if period == "daily":
+        days = 1
+    elif period == "weekly":
         days = 7
     elif period == "monthly":
         days = 30
@@ -45,4 +51,8 @@ def get_digest(
                              map(convert_row, diff)))
     subscribers_diff = get_subscribers_diffs(db, reference_run_id, latest_run_id)
 
-    return {"period": period, "subscribers": subscribers_diff, "posts": posts_diff}
+    return {
+        "period": period,
+        "subscribers": subscribers_diff,
+        "posts": posts_diff
+    }
