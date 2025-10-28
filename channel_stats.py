@@ -63,7 +63,7 @@ with TelegramSession(ENCRYPTION_KEY) as encrypted_session:
 
         with create_saver() as saver:
             async for message in telegram_client.list_messages(channel):
-                excerpt = (message.text[:50] + "...") if message.text and len(message.text) > 50 else (message.text or "")
+                # excerpt = (message.text[:50] + "...") if message.text and len(message.text) > 50 else (message.text or "")
                 reactions = message.reactions.to_json() if message.reactions else ""
 
                 # Get comment count (if linked chat exists)
@@ -76,7 +76,8 @@ with TelegramSession(ENCRYPTION_KEY) as encrypted_session:
                     message.forwards or 0,
                     reactions,
                     comments,
-                    excerpt.replace("\n", " ")
+                    message.text
+                    # excerpt.replace("\n", " ")
                 )
 
 

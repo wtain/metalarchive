@@ -4,6 +4,8 @@ import ChartCard, { ChartDataPoint } from "../components/ChartCard";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import PeriodSelector, { Period } from "../components/PeriodSelector";
 import { Button } from "@/components/ui/button"
+import MetricDisplay from "../components/MetricDisplay"
+import { useNavigate } from "react-router-dom";
 
 interface Subscriber {
 }
@@ -14,6 +16,7 @@ interface SubscriberChanges {
 }
 
 interface PostChange {
+      text: string;
       post_id: number;
       views_old: number;
       views_new: number;
@@ -36,6 +39,8 @@ export default function ReactionsPage() {
   const [period, setPeriod] = useState<Period>("daily");
   const [data, setData] = useState<Digest>({posts: []});
 
+  const navigate = useNavigate();
+
   useEffect(() => {
     axios
       .get<{ data: ChartDataPoint[] }>(`http://127.0.0.1:8001/api/reports/digest?period=${period}`)
@@ -55,12 +60,18 @@ export default function ReactionsPage() {
                 <CardTitle>{d.post_id}</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-gray-500 mb-2">Views</p>
-                <div className="text-3xl font-bold text-green-600">{d.views_new} (+{d.views_diff})</div>
-                <p className="text-sm text-gray-500 mb-2">Reactions</p>
-                <div className="text-3xl font-bold text-green-600">{d.reactions_new} (+{d.reactions_diff})</div>
-                <p className="text-sm text-gray-500 mb-2">Comments</p>
-                <div className="text-3xl font-bold text-green-600">{d.comments_new} (+{d.comments_diff})</div>
+                <p className="text-sm text-black-500 mb-2">{d.text.substring(0, 200)}...</p>
+                <p className="text-sm font-bold text-gray-500 mb-2">Views</p>
+                <MetricDisplay value={d.views_new} valueDiff={d.views_diff} />
+                <p className="text-sm font-bold text-gray-500 mb-2">Reactions</p>
+                <MetricDisplay value={d.reactions_new} valueDiff={d.reactions_diff} />
+                <p className="text-sm font-bold text-gray-500 mb-2">Comments</p>
+                <MetricDisplay value={d.comments_new} valueDiff={d.comments_diff} />
+                <Button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white" onClick={
+                () => {
+                    navigate(`/posts/${d.post_id}`);
+                }
+                }>View Details</Button>
               </CardContent>
             </Card>
           )

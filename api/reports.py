@@ -1,10 +1,12 @@
 from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
+from sqlalchemy import func
+from sqlalchemy.orm import Session, aliased
 
 from daily_digest import get_last_run, get_subscribers_diffs, get_post_diffs
 from db.session import get_db
+from storage_client.models import Post, PostMetric, BatchRun
 
 router = APIRouter()
 
@@ -40,9 +42,9 @@ def get_digest(
     diff = get_post_diffs(db, reference_run_id, latest_run_id)
 
     def convert_row(row):
-        (post_id, views_old, views_new, views_diff, reactions_old, reactions_new, reactions_diff, comments_old,
+        (post_text, post_id, views_old, views_new, views_diff, reactions_old, reactions_new, reactions_diff, comments_old,
          comments_new, comments_diff) = row
-        return {"post_id": post_id, "views_old": views_old, "views_new": views_new, "views_diff": views_diff,
+        return {"text": post_text, "post_id": post_id, "views_old": views_old, "views_new": views_new, "views_diff": views_diff,
                 "reactions_old": reactions_old, "reactions_new": reactions_new, "reactions_diff": reactions_diff,
                 "comments_old": comments_old,"comments_new": comments_new, "comments_diff": comments_diff}
 
@@ -56,3 +58,26 @@ def get_digest(
         "subscribers": subscribers_diff,
         "posts": posts_diff
     }
+
+
+@router.get("/top")
+def get_digest(
+    count: int = 10,
+    db: Session = Depends(get_db)
+):
+    last_run_id = db.query(func.max(BatchRun.id)).one()[0]
+
+    post = aliased(Post)
+    post_metric = aliased(PostMetric)
+
+    data = db.query(
+        post.id,
+        post.text,
+        post_metric.views,
+        post_metric.reactions,
+        post_metric.comments,
+    ).join(post_metric, post.id == post_metric.post_id
+    ).filter(post_metric.run_id == last_run_id).order_by(post_metric.views.desc()).limit(count).all()
+
+    return list(map(lambda row: { "post_id": row[0], "text": row[1], "views": row[2], "reactions": row[3], "comments": row[4] }, data))
+

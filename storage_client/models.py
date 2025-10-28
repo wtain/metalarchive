@@ -27,7 +27,7 @@ if DATABASE_URL:
 
     class Post(Base):
         __tablename__ = "posts"
-        id = Column(Integer, primary_key=True, autoincrement=True)
+        id = Column(Integer, primary_key=True)
         text = Column(String)
 
 

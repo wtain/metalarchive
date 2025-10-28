@@ -2,7 +2,7 @@ import uvicorn
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 
-from api import subscribers, reports
+from api import subscribers, reports, posts
 
 app = FastAPI(title="Analytics API")
 
@@ -22,6 +22,9 @@ app.add_middleware(
 # Routers
 app.include_router(subscribers.router, prefix="/api/subscribers", tags=["Subscribers"])
 app.include_router(reports.router, prefix="/api/reports", tags=["Digest"])
+app.include_router(posts.router, prefix="/api/posts", tags=["Posts"])
+
+# todo: get full post (how do we get first comments?)
 
 
 @app.get("/")

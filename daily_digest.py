@@ -4,7 +4,7 @@ from operator import and_
 from sqlalchemy import func, or_
 from sqlalchemy.orm import aliased
 
-from storage_client.models import SessionLocal, BatchRun, PostMetric, Subscriber
+from storage_client.models import SessionLocal, BatchRun, PostMetric, Subscriber, Post
 
 
 def get_last_run(day):
@@ -30,6 +30,7 @@ def get_post_diffs(session, old_run_id, new_run_id):
 
     query = (
         session.query(
+            Post.text,
             func.coalesce(p1.post_id, p2.post_id).label("post_id"),
             p1.views.label("views_old"),
             p2.views.label("views_new"),
@@ -42,6 +43,7 @@ def get_post_diffs(session, old_run_id, new_run_id):
             (func.coalesce(p2.comments, 0) - func.coalesce(p1.comments, 0)).label("comments_diff"),
         )
         .outerjoin(p2, p1.post_id == p2.post_id)
+        .join(Post, Post.id == p2.post_id)
         .filter(or_(p1.run_id == old_run_id, p1.run_id is None))   # left side
         .filter(or_(p2.run_id == new_run_id, p2.run_id is None))   # right side
     )
@@ -134,6 +136,8 @@ def to_list(t):
 - число новых просмотров и реакций за период
 
 Текущие значения подписок и просмотров
+
+todo: new posts
 """
 
 
@@ -173,7 +177,7 @@ def show_diff(latest_run_id, reference_run_id, session):
     diff = get_post_diffs(session, reference_run_id, latest_run_id)
     # print(diff)
     for row in diff:
-        post_id, views_old, views_new, views_diff, reactions_old, reactions_new, reactions_diff, comments_old, comments_new, comments_diff = row
+        post_text, post_id, views_old, views_new, views_diff, reactions_old, reactions_new, reactions_diff, comments_old, comments_new, comments_diff = row
         if views_diff == 0 and reactions_diff == 0 and comments_diff == 0:
             continue
         print(f"Post {post_id}")
