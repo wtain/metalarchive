@@ -9,15 +9,6 @@ interface AppProps {
 type Change = { date: string; added: number; removed: number }
 
 function App({ children }: AppProps) {
-  const [data, setData] = useState<Change[]>([])
-
-  useEffect(() => {
-    // Example API fetch
-    fetch("/api/subscribers/daily")
-      .then((res) => res.json())
-      .then((d) => setData(d))
-      .catch(() => setData([]))
-  }, [])
 
   return (
     <div className="min-h-screen flex flex-col">

@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends
-from sqlalchemy import func
+from sqlalchemy import Null
 from sqlalchemy.orm import Session, aliased
 from db.session import get_db
 from storage_client.models import Post, PostMetric, BatchRun
@@ -12,8 +12,20 @@ def get_post(
     id: int,
     db: Session = Depends(get_db)
 ):
-    post_data = db.query(Post.id, Post.text).filter(Post.id == id).one()
+    post_data = db.query(Post.id.label("post_id"), Post.text).filter(Post.id == id).one()
     return { "id": post_data[0], "text": post_data[1] }
+
+
+@router.get("/posts")
+def get_post(
+    db: Session = Depends(get_db)
+):
+    query = (
+        db.query(Post.id.label("post_id"), Post.text)
+        .filter(Post.text.isnot(None))
+        .order_by(Post.id.desc())
+    )
+    return convert_data_to_json(query)
 
 
 @router.get("/metrics")

@@ -5,6 +5,7 @@ import App from "./App";
 import SubscribersPage from "./pages/SubscribersPage";
 import ReactionsPage from "./pages/ReactionsPage";
 import PostDetailsPage from "./pages/PostDetailsPage";
+import PostListPage from "./pages/PostListPage";
 import "./index.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
@@ -14,6 +15,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         <Routes>
           <Route path="/subscribers" element={<SubscribersPage />} />
           <Route path="/reactions" element={<ReactionsPage />} />
+          <Route path="/posts" element={<PostListPage />} />
           <Route path="/posts/:id" element={<PostDetailsPage />} />
         </Routes>
       </App>

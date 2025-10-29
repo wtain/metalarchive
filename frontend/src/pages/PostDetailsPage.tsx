@@ -2,10 +2,10 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import ChartCard, { ChartDataPoint } from "../components/ChartCard";
 import PeriodSelector, { Period } from "../components/PeriodSelector";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 
 interface Post {
-  id: string;
+  post_id: string;
   text: string;
 }
 
@@ -51,6 +51,7 @@ export default function PostDetailsPage() {
 
   return (
     <div>
+      <Link to="/reactions">Back to posts</Link>
       <h1 className="text-2xl font-bold mb-4">Post</h1>
       <ChartCard title={`Post ${id}`} data={views.map((v) => {
         return { timestamp: v.timestamp, count: v.views };
