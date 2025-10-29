@@ -15,3 +15,6 @@ telegram_api_hash.txt
 telegram_phone.txt
 
 __pycache__
+
+
+.DS_Store

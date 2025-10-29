@@ -1,22 +1,24 @@
-import { useEffect, useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import { useState } from "react"
+import Navbar from "@/components/Navbar"
+import Sidebar from "@/components/Sidebar"
+import { Outlet } from "react-router-dom"
 
-interface AppProps {
-  children: React.ReactNode;
-}
 
-type Change = { date: string; added: number; removed: number }
+function App() {
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
-function App({ children }: AppProps) {
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <header className="bg-white shadow p-4">
-        <h1 className="text-2xl font-bold text-indigo-600">Subscribers Dashboard</h1>
-      </header>
+    <div className="min-h-screen flex bg-gray-50">
+      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      <main className="flex-1 container mx-auto p-6">{children}</main>
+      <div className="flex-1 flex flex-col">
+        <Navbar onMenuClick={() => setSidebarOpen(true)} />
+
+        <main className="flex-1 p-6">
+          <Outlet />
+        </main>
+      </div>
     </div>
   )
 }
