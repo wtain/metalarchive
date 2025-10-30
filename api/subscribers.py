@@ -14,6 +14,7 @@ def get_subscribers_count_over_time(
 ):
     # todo: pass db into this
     # data = list(map(lambda t: [t[0], t[1]], subscribers_count_over_time()))
+    # period - is ignored for now
     data = subscribers_count_over_time()
     return {"period": period, "data": data}
 

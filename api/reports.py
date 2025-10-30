@@ -15,6 +15,7 @@ router = APIRouter()
 # extract post title and image
 # single post views, reactions and comments over time
 
+
 @router.get("/digest")
 def get_digest(
     period: str = "daily",  # or "weekly", "monthly"
@@ -61,7 +62,7 @@ def get_digest(
 
 
 @router.get("/top")
-def get_digest(
+def get_top_posts(
     count: int = 10,
     db: Session = Depends(get_db)
 ):

@@ -65,7 +65,7 @@ def subscribers_count_over_time():
             func.count(subscriber.id)
         )
         .join(subscriber, batch_run.id == subscriber.run_id)
-        .group_by(batch_run.timestamp)
+        .group_by(batch_run.timestamp, batch_run.id)
         .order_by(batch_run.timestamp)
     )
 

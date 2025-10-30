@@ -1,5 +1,4 @@
 from fastapi import APIRouter, Depends
-from sqlalchemy import Null
 from sqlalchemy.orm import Session, aliased
 from db.session import get_db
 from storage_client.models import Post, PostMetric, BatchRun
@@ -17,7 +16,7 @@ def get_post(
 
 
 @router.get("/posts")
-def get_post(
+def get_all_posts(
     db: Session = Depends(get_db)
 ):
     query = (
@@ -44,13 +43,6 @@ def get_post_metrics(id: int,
     ).order_by(pm.run_id))
 
     return convert_data_to_json(query)
-
-    # return list(map(lambda row: {
-    #     "timestamp": row[0],
-    #     "views": row[1],
-    #     "reactions": row[2],
-    #     "comments": row[3]
-    # }, query.all()))
 
 
 def convert_data_to_json(query):

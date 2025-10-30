@@ -21,12 +21,27 @@ export default function PostCard({ post }: PostCardProps ) {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-black-500 mb-2">{post.text.substring(0, 200)}...</p>
-            <p className="text-sm font-bold text-gray-500 mb-2">Views</p>
-            <MetricDisplay value={post.views_new} valueDiff={post.views_diff} />
-            <p className="text-sm font-bold text-gray-500 mb-2">Reactions</p>
-            <MetricDisplay value={post.reactions_new} valueDiff={post.reactions_diff} />
-            <p className="text-sm font-bold text-gray-500 mb-2">Comments</p>
-            <MetricDisplay value={post.comments_new} valueDiff={post.comments_diff} />
+            { 
+              post.views_new != null &&
+                <div>
+                  <p className="text-sm font-bold text-gray-500 mb-2">Views</p>
+                  <MetricDisplay value={post.views_new} valueDiff={post.views_diff} />
+                </div>
+            }            
+            {
+              post.reactions_new != null &&
+                <div>
+                  <p className="text-sm font-bold text-gray-500 mb-2">Reactions</p>
+                  <MetricDisplay value={post.reactions_new} valueDiff={post.reactions_diff} />      
+                </div>
+            }
+            {
+              post.comments_new != null &&
+                <div>
+                  <p className="text-sm font-bold text-gray-500 mb-2">Comments</p>
+                  <MetricDisplay value={post.comments_new} valueDiff={post.comments_diff} />
+                </div>
+            }
             <Button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white" onClick={
             () => {
                 navigate(`/posts/${post.post_id}`);

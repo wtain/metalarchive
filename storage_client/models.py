@@ -29,6 +29,7 @@ if DATABASE_URL:
         __tablename__ = "posts"
         id = Column(Integer, primary_key=True)
         text = Column(String)
+        created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
 
     class PostMetric(Base):

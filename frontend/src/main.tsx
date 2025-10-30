@@ -6,6 +6,7 @@ import SubscribersPage from "./pages/SubscribersPage";
 import ReactionsPage from "./pages/ReactionsPage";
 import PostDetailsPage from "./pages/PostDetailsPage";
 import PostListPage from "./pages/PostListPage";
+import TopPostsPage from "./pages/TopPostsPage";
 import "./index.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
@@ -16,6 +17,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             <Route path="reactions" element={<ReactionsPage />} />
             <Route index path="subscribers" element={<SubscribersPage />} />
             <Route path="posts" element={<PostListPage />} />
+            <Route path="top" element={<TopPostsPage />} />
             <Route path="posts/:id" element={<PostDetailsPage />} />
           </Route>
         </Routes>

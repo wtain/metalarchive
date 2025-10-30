@@ -28,6 +28,12 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
         <Link to="/reactions" className="block hover:bg-gray-700 rounded px-3 py-2" onClick={onClose}>
           Reactions
         </Link>
+        <Link to="/posts" className="block hover:bg-gray-700 rounded px-3 py-2" onClick={onClose}>
+          Posts
+        </Link>
+        <Link to="/top" className="block hover:bg-gray-700 rounded px-3 py-2" onClick={onClose}>
+          Top
+        </Link>
       </nav>
     </div>
   )

@@ -12,9 +12,7 @@ interface Post {
       post_id: number;
 }
 
-interface PostChange {
-      text: string;
-      post_id: number;
+interface PostChange extends Post {
       views_old?: number;
       views_new?: number;
       views_diff?: number;
