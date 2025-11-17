@@ -31,12 +31,27 @@ class TelegramTelethonClient:
             yield user
 
     async def get_comments(self, channel, message_id):
-        pass
+        try:
+            result = await self.client(GetRepliesRequest(
+                peer=channel,
+                msg_id=message_id,
+                offset_id=0,
+                offset_date=None,
+                add_offset=0,
+                limit=20,
+                max_id=0,
+                min_id=0,
+                hash=0
+            ))
+            return result
+        except Exception as e:
+            print(f"Error fetching comments for post {message_id}: {e}")
+            return 0
 
     async def get_comments_count(self, channel, message_id):
         """
-                Returns the number of comments for a given channel post
-                """
+        Returns the number of comments for a given channel post
+        """
         try:
             result = await self.client(GetRepliesRequest(
                 peer=channel,

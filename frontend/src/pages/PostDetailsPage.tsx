@@ -49,6 +49,10 @@ export default function PostDetailsPage() {
 
   if (!post || !views) return <p className="p-6 text-gray-500">Loading...</p>;
 
+  let regex = new RegExp(/\[(.+)\]\((.+)\)/, "g")
+  // var text = post.text.replace(regex, (_, p1, p2) => `<A href=${p2}>${p1}</A>`)
+  var text = post.text
+
   return (
     <div>
       <Link to="/reactions">Back to posts</Link>
@@ -56,7 +60,7 @@ export default function PostDetailsPage() {
       <ChartCard title={`Post ${id}`} data={views.map((v) => {
         return { timestamp: v.timestamp, count: v.views };
       })} />
-      <p className="text-sm text-black-500 mb-2">{post.text}</p>
+      <p className="text-sm text-black-500 mb-2">{text}</p>
     </div>
   );
 }

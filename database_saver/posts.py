@@ -1,4 +1,8 @@
-from storage_client.models import PostMetric, SessionLocal, Post
+from functools import reduce
+
+from sqlalchemy import update, delete
+
+from storage_client.models import PostMetric, Post
 from storage_client.posts import count_reactions
 
 
@@ -31,10 +35,17 @@ class PostsStatsDatabaseSaver:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.session.add_all(self.records_stats)
-        ids = self.session.query(Post.id.distinct()).all()
-        ids_to_remove = set(map(lambda v: v[0], ids))
-        self.records_posts = list(filter(lambda post: post.id not in ids_to_remove, self.records_posts))
-        self.session.add_all(self.records_posts)
-        # self.session.commit()
-        # self.session.close()
-        print(f"✅ Posts exported to database")
+
+        posts_in_db = reduce(lambda d, v: {**d, v[0]: v[1]}, map(lambda v: (v[0], v[1]), self.session.query(Post.id, Post.text).all()), {})
+
+        ids_to_remove = posts_in_db.keys()
+        posts_to_add = list(filter(lambda post: post.id not in ids_to_remove, self.records_posts))
+        posts_to_update = list(filter(lambda post: posts_in_db[post.id] != post.text, self.records_posts))
+
+        self.session.execute(
+            delete(Post)
+            .where(Post.id.in_(map(lambda p: p.id, posts_to_update)))
+        )
+        self.session.add_all(posts_to_add + posts_to_update)
+        print(f"✅ Posts exported to database - {len(posts_to_add)} posts saved")
+        print(f"✅ Posts exported to database - {len(posts_to_update)} posts updated")

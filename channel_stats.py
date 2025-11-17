@@ -1,5 +1,4 @@
 import os
-from datetime import datetime
 
 from dotenv import load_dotenv
 
@@ -22,52 +21,48 @@ SAVER_TYPE = os.getenv('SAVER_TYPE') or 'DATABASE'
 ENCRYPTION_KEY = os.getenv('ENCRYPTION_KEY')
 
 with TelegramSession(ENCRYPTION_KEY) as encrypted_session:
-
     telegram_client = TelegramTelethonClient(encrypted_session, TELEGRAM_API_ID, TELEGRAM_API_HASH)
+
 
     async def main():
 
         await telegram_client.start(TELEGRAM_PHONE)
 
-        # Replace with your channel username or ID
         channel = await telegram_client.get_channel(CHANNEL_NAME)
-
-        # cache this?
-        # linked_chat = await telegram_client.get_linked_chat(channel)
-        #
-        # if linked_chat:
-        #     print(f"✅ Found linked chat: {linked_chat.title} (ID {linked_chat.id})")
-        # else:
-        #     print("⚠️ This channel has no linked discussion group")
-
-        # timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-
-        # subs_file = f"results/subscribers/subscribers_{timestamp}.csv"
-        # posts_file = f"results/posts/posts_{timestamp}.csv"
-
-        # saver_type = 'DATABASE'
 
         # todo: check SAVER_TYPE here and create appropriate wrapper
         with DatabaseSession() as session_wrapper:
-
             await export_subscribers(channel, lambda: session_wrapper.create_subscribers_saver())
 
             await export_posts(channel, lambda: session_wrapper.create_posts_saver())
-
-            # await export_subscribers(channel, lambda: create_subscribers_saver(session_wrapper.session, SAVER_TYPE, subs_file, timestamp, session_wrapper.batch_id))
-            #
-            # await export_posts(channel, lambda: create_posts_saver(session_wrapper.session, SAVER_TYPE, posts_file, timestamp, session_wrapper.batch_id))
 
 
     async def export_posts(channel, create_saver):
 
         with create_saver() as saver:
             async for message in telegram_client.list_messages(channel):
-                # excerpt = (message.text[:50] + "...") if message.text and len(message.text) > 50 else (message.text or "")
                 reactions = message.reactions.to_json() if message.reactions else ""
 
+                def filter_spillover_comments(iter):
+                    for date, sender, message in iter:
+                        if sender is not None:
+                            break
+                        yield message
+
+                comments = await telegram_client.get_comments(channel, message.id)
+                comments_messages = list(
+                    filter_spillover_comments(
+                        sorted(map(lambda c: (c.date, c.sender_id, c.message), comments.messages if comments else []))
+                    )
+                )
+                # print(comments_messages)
+                message_tail = "\n".join(comments_messages)
+                post_content = message.text
+                if message_tail:
+                    post_content += "\n" + message_tail
+
                 # Get comment count (if linked chat exists)
-                comments = await telegram_client.get_comments_count(channel, message.id)
+                comments_count = await telegram_client.get_comments_count(channel, message.id)
 
                 saver.write_row(
                     message.id,
@@ -75,9 +70,8 @@ with TelegramSession(ENCRYPTION_KEY) as encrypted_session:
                     message.views or 0,
                     message.forwards or 0,
                     reactions,
-                    comments,
-                    message.text
-                    # excerpt.replace("\n", " ")
+                    comments_count,
+                    post_content
                 )
 
 
@@ -108,4 +102,3 @@ with TelegramSession(ENCRYPTION_KEY) as encrypted_session:
 
 
     telegram_client.run_until_complete(main)
-
