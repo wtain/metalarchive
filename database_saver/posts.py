@@ -1,8 +1,8 @@
 from functools import reduce
 
-from sqlalchemy import update, delete
+from sqlalchemy import delete, func
 
-from storage_client.models import PostMetric, Post
+from storage_client.models import PostMetric, Post, BatchRun
 from storage_client.posts import count_reactions
 
 
@@ -34,13 +34,23 @@ class PostsStatsDatabaseSaver:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        # latest_run_id = self.session.query(func.max(BatchRun.id)).one()[0]
+        # print(f"Latest run id: {latest_run_id}")
+        # previous_values = self.session.query(
+        #     PostMetric.post_id,
+        #     PostMetric.views,
+        #     PostMetric.comments,
+        #     PostMetric.reactions
+        # ).where(PostMetric.run_id == latest_run_id).all()
+        # print(previous_values)
+
         self.session.add_all(self.records_stats)
 
         posts_in_db = reduce(lambda d, v: {**d, v[0]: v[1]}, map(lambda v: (v[0], v[1]), self.session.query(Post.id, Post.text).all()), {})
 
         ids_to_remove = posts_in_db.keys()
         posts_to_add = list(filter(lambda post: post.id not in ids_to_remove, self.records_posts))
-        posts_to_update = list(filter(lambda post: posts_in_db[post.id] != post.text, self.records_posts))
+        posts_to_update = list(filter(lambda post: post.id in posts_in_db and posts_in_db[post.id] != post.text, self.records_posts))
 
         self.session.execute(
             delete(Post)

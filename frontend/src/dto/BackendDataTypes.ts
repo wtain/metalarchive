@@ -12,6 +12,11 @@ interface Post {
       post_id: number;
 }
 
+interface Tag {
+    name: String;
+    probability: number;
+}
+
 interface PostChange extends Post {
       views_old?: number;
       views_new?: number;
@@ -28,4 +33,7 @@ interface Digest {
     period: string;
     subscribers: SubscriberChanges;
     posts: PostChange[];
+    views_total: number;
+    reactions_total: number;
+    comments_total: number;
 }

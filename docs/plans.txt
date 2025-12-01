@@ -1,0 +1,51 @@
+Frontend:
+1. (DONE) Translate links: from Telegram links to internal routing
+2. Add/remove tags
+3. Change title
+4. Display: Publication time
+5. Publishing ability
+6. Remove Cut-off (emojis, "Продолжение...")
+7. Types, linter,...
+8. Subscribers page: interval choice is unnecessary
+
+Backend:
+1. New post - extract tags and title
+2. Scheduling for updates (further: variadic intervals: after new post increase update frequency for some time)
+3. Skip empty updates
+
+Data management:
+1. Migration
+2. New schema
+3. Multi tenancy (multiple telegram channels, multiple social media platform: Threads, Instagram,...)
+4. Tag/title source: own model, user, ChatGPT,...
+5. Database dump and restore
+6. Separate diff tables?
+7. Unwind metrics into multiple scalar records
+8. Sparse data: don't store single metric value if not changed
+
+AI:
+1. Train models, improve quality (define quality); Tags quality is low, doesn't handle russian language cases well
+2. Integrate with ChatGPT
+
+Technical debt:
+ 1. Tests (unit + integration)
+ 2. API definitions - unify DTOs between backend and frontend
+ 3. Mix of database tuples and DTOs in backend code
+ 4. Migrate to a dedicated repository
+ 5. Hardcoded hosts, hardcoded channel name
+ 6. Update loop with telegram client seems weird
+ 7. CORS?
+ 8. Concurrency for update tasks
+ 9. Prints to logs
+10. Parallel updates?
+11. Split update jobs for different posts?
+
+Infrastructure:
+1. Containerize. Docker compose, Swarm, or k8s?
+2. GitHub actions to build (take care of secrets)
+3. Observability: RPMs, logs
+
+Documentation:
+1. Architecture
+2. Use cases
+3. Visualize this list (issue & feature tracker) somewhere

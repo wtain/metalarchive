@@ -1,9 +1,11 @@
 
 import React, { useEffect, useState } from "react";
+import axios from "axios";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Button } from "@/components/ui/button"
 import MetricDisplay from "../components/MetricDisplay"
-import { Subscriber, SubscriberChanges, PostChange, Digest } from "../dto/BackendDataTypes";
+import TagList from "../components/TagList"
+import { PostChange, Digest, Tag } from "../dto/BackendDataTypes";
 import { useNavigate } from "react-router-dom";
 
 interface PostCardProps {
@@ -14,12 +16,44 @@ export default function PostCard({ post }: PostCardProps ) {
 
     const navigate = useNavigate();
 
+    const [title, setTitle] = useState<String>("???");
+    const [tags, setTags] = useState<Tag[]>([]);
+
+    useEffect(() => {
+        axios
+          .get<{ data: String }>(`http://127.0.0.1:8001/api/posts/post_header?post_id=${post.post_id}`)
+          .then((res) => setTitle(res.data))
+          .catch(console.error);
+    }, []);
+
+    useEffect(() => {
+      axios
+        .get<{ data: Tag[] }>(`http://127.0.0.1:8001/api/posts/post_tags?post_id=${post.post_id}`)
+        .then((res) => setTags(res.data))
+        .catch(console.error);
+  }, []);
+
+  const removeTag = (tag: string) => {
+    setTags((t) => t.filter((x) => x !== tag));
+  };
+
+  const clickedTag = (tag: string) => {
+    console.log("Clicked tag:", tag);
+  };
+
     return (
         <Card className="shadow-md hover:shadow-lg transition">
           <CardHeader>
-            <CardTitle>{post.post_id}</CardTitle>
+            <CardTitle>{post.post_id}. {title}</CardTitle>
           </CardHeader>
           <CardContent>
+            <TagList
+              tags={tags.map(t => {
+                return t.name;
+              })}
+              onRemoveTag={removeTag}
+              onClickTag={clickedTag}
+            />
             <p className="text-sm text-black-500 mb-2">{post.text.substring(0, 200)}...</p>
             { 
               post.views_new != null &&

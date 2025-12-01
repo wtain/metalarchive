@@ -1,6 +1,6 @@
 import React from "react";
 
-export type Period = "daily" | "weekly" | "monthly";
+export type Period = "default" | "daily" | "weekly" | "monthly";
 
 interface PeriodSelectorProps {
   value: Period;
@@ -8,7 +8,7 @@ interface PeriodSelectorProps {
 }
 
 export default function PeriodSelector({ value, onChange }: PeriodSelectorProps) {
-  const options: Period[] = ["daily", "weekly", "monthly"];
+  const options: Period[] = ["default", "daily", "weekly", "monthly"];
 
   return (
     <div className="flex gap-2 mb-4">

@@ -1,7 +1,7 @@
 import os
 
 from dotenv import load_dotenv
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, BigInteger, ForeignKey
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, BigInteger, ForeignKey, Double
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 from datetime import datetime
 
@@ -30,6 +30,24 @@ if DATABASE_URL:
         id = Column(Integer, primary_key=True)
         text = Column(String)
         created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    # todo: move into Post itself, handle updates
+    class PostHeader(Base):
+        __tablename__ = "posts_header"
+        id = Column(Integer, primary_key=True)
+        post_id = Column(Integer, ForeignKey("posts.id"), index=True)
+        title = Column(String)
+        created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+        post = relationship("Post")
+
+    class PostTags(Base):
+        __tablename__ = "posts_tags"
+        id = Column(Integer, primary_key=True)
+        post_id = Column(Integer, ForeignKey("posts.id"), index=True)
+        name = Column(String)
+        probability = Column(Double)
+        created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+        post = relationship("Post")
 
 
     class PostMetric(Base):

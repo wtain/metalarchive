@@ -9,12 +9,12 @@ router = APIRouter()
 
 @router.get("/count-over-time")
 def get_subscribers_count_over_time(
-    period: str = "daily",  # or "weekly", "monthly"
+    period: str = "",  # or "daily", "weekly", "monthly"
     db: Session = Depends(get_db)
 ):
     # todo: pass db into this
     # data = list(map(lambda t: [t[0], t[1]], subscribers_count_over_time()))
     # period - is ignored for now
-    data = subscribers_count_over_time()
+    data = subscribers_count_over_time(period)
     return {"period": period, "data": data}
 

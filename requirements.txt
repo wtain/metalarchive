@@ -6,6 +6,7 @@ aiosignal==1.4.0
 alembic==1.16.5
 annotated-types==0.7.0
 anyio==4.11.0
+APScheduler==3.11.1
 async-timeout==5.0.1
 attrs==25.3.0
 beautifulsoup4==4.12.3
@@ -83,6 +84,7 @@ transformers==4.57.2
 typing-inspection==0.4.1
 typing_extensions==4.15.0
 tzdata==2024.2
+tzlocal==5.3.1
 urllib3==2.3.0
 uvicorn==0.38.0
 yarl==1.20.1

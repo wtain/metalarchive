@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session, aliased
+
 from db.session import get_db
-from storage_client.models import Post, PostMetric, BatchRun
+from storage_client.models import Post, PostMetric, BatchRun, PostTags, PostHeader
 
 router = APIRouter()
 
@@ -13,6 +14,24 @@ def get_post(
 ):
     post_data = db.query(Post.id.label("post_id"), Post.text).filter(Post.id == id).one()
     return { "id": post_data[0], "text": post_data[1] }
+
+
+@router.get("/post_tags")
+def get_post_tags(
+    post_id: int,
+    db: Session = Depends(get_db)
+):
+    post_tags = db.query(PostTags.name, PostTags.probability).filter(PostTags.post_id == post_id)
+    return convert_data_to_json(post_tags)
+
+
+@router.get("/post_header")
+def get_post_tags(
+    post_id: int,
+    db: Session = Depends(get_db)
+):
+    header = db.query(PostHeader.title).filter(PostHeader.post_id == post_id).one()[0]
+    return header
 
 
 @router.get("/posts")

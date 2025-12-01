@@ -2,7 +2,7 @@
 import pandas as pd
 from datetime import datetime
 
-from sqlalchemy import func
+from sqlalchemy import func, literal_column
 from sqlalchemy.orm import aliased
 
 from storage_client.models import SessionLocal, Subscriber, engine, BatchRun
@@ -54,27 +54,42 @@ def load_subscribers_to_df():
 # where s.timestamp=t.timestamp
 # group by t.timestamp
 # order by t.timestamp desc;
-def subscribers_count_over_time():
+def subscribers_count_over_time(period):
     session = SessionLocal()
     subscriber = aliased(Subscriber)
     batch_run = aliased(BatchRun)
 
-    q = (
-        session.query(
-            batch_run.timestamp,
-            func.count(subscriber.id)
+    if period == "default":
+        q = (
+            session.query(
+                batch_run.timestamp,
+                func.count(subscriber.id)
+            )
+            .join(subscriber, batch_run.id == subscriber.run_id)
+            .group_by(batch_run.timestamp, batch_run.id)
+            .order_by(batch_run.timestamp)
         )
-        .join(subscriber, batch_run.id == subscriber.run_id)
-        .group_by(batch_run.timestamp, batch_run.id)
-        .order_by(batch_run.timestamp)
-    )
+    else:
+        inner = (
+            session.query(
+                BatchRun.timestamp.label("timestamp"),
+                func.count(Subscriber.id).label("subscribers_count"),
+            )
+            .join(
+                Subscriber, BatchRun.id == Subscriber.run_id
+            )
+            .group_by(BatchRun.timestamp, BatchRun.id)
+        ).subquery()
 
-    # q = (
-    #     session.query(
-    #         Subscriber.run_id,
-    #         func.count(Subscriber.id)
-    #     )
-    #     .group_by(Subscriber.run_id)
-    #     .order_by(Subscriber.run_id.desc())
-    # )
+        format_period = {'daily': 'YYYY-MM-DD', 'weekly': 'YYYY-IW', 'monthly': 'YYYY-MM'}[period]
+        group_by_expression = func.to_char(inner.c.timestamp, format_period).label("period")
+        q = (
+            session.query(
+                group_by_expression,
+                func.max(inner.c.subscribers_count).label("max_subscribers_count")
+            )
+            .group_by(group_by_expression)
+            .order_by(group_by_expression)
+        )
+
     return list(map(lambda record: { "timestamp": record[0], "count": record[1] }, q.all()))

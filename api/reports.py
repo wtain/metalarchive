@@ -30,14 +30,25 @@ def get_digest(
     elif period == "monthly":
         days = 30
     # elif type(period) is int:
-    else:
+    elif period != "default":
         days = int(period)
-    reference = now - timedelta(days=days)
+    if days:
+        reference = now - timedelta(days=days)
     latest_run_id = get_last_run(now)
-    reference_run_id = get_last_run(reference)
+    if period == "default":
+        reference_run_id = (
+            db.query(
+                func.max(BatchRun.id)
+            )
+            .filter(BatchRun.id < latest_run_id)
+        ).one()[0]
+    else:
+        reference_run_id = get_last_run(reference)
 
     if not reference_run_id:
         return "No data"
+
+    print(f"Reference run id: {reference_run_id}")
 
     # todo: separate posts table + join + add post title
     diff = get_post_diffs(db, reference_run_id, latest_run_id)
@@ -54,10 +65,17 @@ def get_digest(
                              map(convert_row, diff)))
     subscribers_diff = get_subscribers_diffs(db, reference_run_id, latest_run_id)
 
+    views_total = sum(map(lambda diff: diff["views_diff"], posts_diff))
+    reactions_total = sum(map(lambda diff: diff["reactions_diff"], posts_diff))
+    comments_total = sum(map(lambda diff: diff["comments_diff"], posts_diff))
+
     return {
         "period": period,
         "subscribers": subscribers_diff,
-        "posts": posts_diff
+        "posts": posts_diff,
+        "views_total": views_total,
+        "reactions_total": reactions_total,
+        "comments_total": comments_total,
     }
 
 
