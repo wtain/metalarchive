@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timedelta
 from operator import and_
 
@@ -5,6 +6,9 @@ from sqlalchemy import func, or_
 from sqlalchemy.orm import aliased
 
 from storage_client.models import SessionLocal, BatchRun, PostMetric, Subscriber, Post
+
+
+logger = logging.getLogger("uvicorn.info")
 
 
 def get_last_run(day):
@@ -150,27 +154,27 @@ def daily_digest():
     reference_run_id = get_last_run(yesterday)
     reference_run_id2 = get_last_run(week_ago)
     reference_run_id3 = get_last_run(month_ago)
-    print(f"Latest run id: {latest_run_id}")
-    print(f"Yesterday run id: {reference_run_id}")
-    print(f"Last week run id: {reference_run_id2}")
-    print(f"Last month run id: {reference_run_id3}")
+    logger.info(f"Latest run id: {latest_run_id}")
+    logger.info(f"Yesterday run id: {reference_run_id}")
+    logger.info(f"Last week run id: {reference_run_id2}")
+    logger.info(f"Last month run id: {reference_run_id3}")
     # print(reference_run_id, latest_run_id)
     session = SessionLocal()
 
     if reference_run_id:
         show_diff(latest_run_id, reference_run_id, session)
         diff_day = get_subscribers_diffs(session, reference_run_id, latest_run_id)
-        print(f"Daily diff: {diff_day}")
+        logger.info(f"Daily diff: {diff_day}")
 
     if reference_run_id2:
         show_diff(latest_run_id, reference_run_id2, session)
         diff_week = get_subscribers_diffs(session, reference_run_id2, latest_run_id)
-        print(f"Weekly diff: {diff_week}")
+        logger.info(f"Weekly diff: {diff_week}")
 
     if reference_run_id3:
         show_diff(latest_run_id, reference_run_id3, session)
         diff_month = get_subscribers_diffs(session, reference_run_id3, latest_run_id)
-        print(f"Monthly diff: {diff_month}")
+        logger.info(f"Monthly diff: {diff_month}")
 
 
 def show_diff(latest_run_id, reference_run_id, session):
@@ -180,12 +184,12 @@ def show_diff(latest_run_id, reference_run_id, session):
         post_text, post_id, views_old, views_new, views_diff, reactions_old, reactions_new, reactions_diff, comments_old, comments_new, comments_diff = row
         if views_diff == 0 and reactions_diff == 0 and comments_diff == 0:
             continue
-        print(f"Post {post_id}")
+        logger.info(f"Post {post_id}")
         if views_diff > 0:
-            print(f"- Views: {views_old} -> {views_new} (+{views_diff})")
+            logger.info(f"- Views: {views_old} -> {views_new} (+{views_diff})")
         if reactions_diff > 0:
-            print(f"- Reactions: {reactions_old} -> {reactions_new} (+{reactions_diff})")
+            logger.info(f"- Reactions: {reactions_old} -> {reactions_new} (+{reactions_diff})")
         if comments_diff > 0:
-            print(f"- Comments: {comments_old} -> {comments_new} (+{comments_diff})")
-        print()
+            logger.info(f"- Comments: {comments_old} -> {comments_new} (+{comments_diff})")
+        logger.info("")
 

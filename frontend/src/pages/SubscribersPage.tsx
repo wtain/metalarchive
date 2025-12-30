@@ -4,7 +4,7 @@ import ChartCard, { ChartDataPoint } from "../components/ChartCard";
 import PeriodSelector, { Period } from "../components/PeriodSelector";
 
 export default function SubscribersPage() {
-  const [period, setPeriod] = useState<Period>("daily");
+  const [period, setPeriod] = useState<Period>("default");
   const [data, setData] = useState<ChartDataPoint[]>([]);
 
   useEffect(() => {

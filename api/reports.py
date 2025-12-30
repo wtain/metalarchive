@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends
@@ -7,6 +8,9 @@ from sqlalchemy.orm import Session, aliased
 from daily_digest import get_last_run, get_subscribers_diffs, get_post_diffs
 from db.session import get_db
 from storage_client.models import Post, PostMetric, BatchRun
+
+
+logger = logging.getLogger("uvicorn.info")
 
 router = APIRouter()
 
@@ -48,7 +52,7 @@ def get_digest(
     if not reference_run_id:
         return "No data"
 
-    print(f"Reference run id: {reference_run_id}")
+    logger.info(f"Reference run id: {reference_run_id}")
 
     # todo: separate posts table + join + add post title
     diff = get_post_diffs(db, reference_run_id, latest_run_id)

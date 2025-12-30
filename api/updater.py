@@ -1,4 +1,5 @@
 import asyncio
+import logging
 
 from fastapi import APIRouter, Depends
 from sqlalchemy import delete
@@ -11,7 +12,10 @@ from environment.secrets import CHANNEL_NAME
 from storage_client.models import Post, PostHeader, PostTags
 from synchronizer.poller import poll_from_telegram
 
+logger = logging.getLogger("uvicorn.info")
+
 router = APIRouter()
+
 
 """
 curl -X POST http://127.0.0.1:8001/api/updater/update
@@ -22,7 +26,8 @@ def update_data(
 ):
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    loop.run_until_complete(poll_from_telegram(CHANNEL_NAME))
+    result = loop.run_until_complete(poll_from_telegram(db, CHANNEL_NAME))
+    return result
 
 
 """
@@ -45,7 +50,7 @@ def update_tags(
         post_id = post[0]
         post_text = post[1]
         tags = title_extractor.get_tags(post_text)
-        print(tags)
+        logger.info(tags)
         for name, probability in tags:
             db.add(PostTags(post_id=post_id, name=name, probability=probability))
     db.commit()
@@ -70,7 +75,7 @@ def update_titles(
         post_id = post[0]
         post_text = post[1]
         title = title_extractor.get_title(post_text)
-        print(title)
+        logger.info(title)
         db.add(PostHeader(post_id=post_id, title=title))
     db.commit()
 

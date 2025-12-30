@@ -6,8 +6,13 @@ from sentence_transformers import SentenceTransformer
 class TagsExtractor:
 
     def __init__(self):
-        model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')
-        self.kw_model = KeyBERT(model)
+        self.kw_model = None
+
+    def _get_kw_model(self):
+        if self.kw_model is None:
+            model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')
+            self.kw_model = KeyBERT(model)
+        return self.kw_model
 
     def get_tags(self, text):
 
@@ -15,7 +20,7 @@ class TagsExtractor:
 
         text = cleaned_text
 
-        keywords = self.kw_model.extract_keywords(
+        keywords = self._get_kw_model().extract_keywords(
             text,
             keyphrase_ngram_range=(1, 1),
 

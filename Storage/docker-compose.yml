@@ -1,8 +1,14 @@
 version: '3.8'
+
+networks:
+  appnet:
+
 services:
   db:
     image: timescale/timescaledb:latest-pg15
     container_name: timescaledb
+    networks:
+      - appnet
     ports:
       - "5432:5432"
     environment:

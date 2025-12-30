@@ -1,23 +1,24 @@
 
-interface Subscriber {
+export interface Subscriber {
 }
 
-interface SubscriberChanges {
+export interface SubscriberChanges {
     new: Subscriber[];
     removed: Subscriber[];
 }
 
-interface Post {
-      text: string;
-      post_id: number;
+export interface Post {
+    text: string;
+    post_id: number;
 }
 
-interface Tag {
-    name: String;
+export interface TagData {
+    id: number;
+    name: string;
     probability: number;
 }
 
-interface PostChange extends Post {
+export interface PostChange extends Post {
       views_old?: number;
       views_new?: number;
       views_diff?: number;
@@ -29,7 +30,7 @@ interface PostChange extends Post {
       comments_diff?: number;
 }
 
-interface Digest {
+export interface Digest {
     period: string;
     subscribers: SubscriberChanges;
     posts: PostChange[];
@@ -37,3 +38,5 @@ interface Digest {
     reactions_total: number;
     comments_total: number;
 }
+
+// export * as BackendDataTypes from './BackendDataTypes'

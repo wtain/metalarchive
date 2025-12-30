@@ -69,6 +69,3 @@ class TelegramTelethonClient:
             print(f"Error fetching comments for post {message_id}: {e}")
             return 0
 
-    def run_until_complete(self, main):
-        with self.client:
-            self.client.loop.run_until_complete(main())

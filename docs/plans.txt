@@ -1,7 +1,7 @@
 Frontend:
 1. (DONE) Translate links: from Telegram links to internal routing
-2. Add/remove tags
-3. Change title
+2. (DONE) Add/remove tags
+3. (DONE) Change title
 4. Display: Publication time
 5. Publishing ability
 6. Remove Cut-off (emojis, "Продолжение...")
@@ -14,7 +14,7 @@ Backend:
 3. Skip empty updates
 
 Data management:
-1. Migration
+1. Migrations (Alembic?)
 2. New schema
 3. Multi tenancy (multiple telegram channels, multiple social media platform: Threads, Instagram,...)
 4. Tag/title source: own model, user, ChatGPT,...
@@ -22,6 +22,7 @@ Data management:
 6. Separate diff tables?
 7. Unwind metrics into multiple scalar records
 8. Sparse data: don't store single metric value if not changed
+9. Tags & title: source & soft-delete
 
 AI:
 1. Train models, improve quality (define quality); Tags quality is low, doesn't handle russian language cases well
@@ -39,13 +40,48 @@ Technical debt:
  9. Prints to logs
 10. Parallel updates?
 11. Split update jobs for different posts?
+12. Responses from API
+13. Cleanup
+14. Use Axios instead of FetchAPI (why?)
+15. Data sanitization
+16. Remove unused fields
+17. Metrics & observability
 
 Infrastructure:
 1. Containerize. Docker compose, Swarm, or k8s?
 2. GitHub actions to build (take care of secrets)
 3. Observability: RPMs, logs
+4. Metrics & observability
+
+Performance
+1. Aggregated queries: get post metrics page data
+2. Pagination for queries
+3. Async use of postgres?
+4. WARNING: Security error while unpacking a received message: Too many messages had to be ignored consecutively
+
+Issues:
+ 1. (Fixed) Some failures on new post (see scratch_5)
+ 2. Errors for comments to posts 1 & 2
+ 3. Include new posts in reactions
+ 4. (Fixed) Async is not working properly
+ 5. (Fixed) Logging? Doesn't work properly
+ 6. Concurrent updates
+ 7. (Fixed) Duplicated logs
+ 8. Reaction counts are wrong
+ 9. Async workers cleanup seems to be wrong still
+10. (Error) See scratch_6
+11. Locks? Parallel updates?
 
 Documentation:
 1. Architecture
 2. Use cases
 3. Visualize this list (issue & feature tracker) somewhere
+
+Features:
+1. Calendar for posts
+2. Heatmap (posts, comments, views, reactions) per period - day, week, month
+3. Number of posts (comments, views, reactions) per day - graphs
+4. Subscribers list display + diff display
+5. Build derived views: e.g. daily totals (background jobs)
+6. Forwards counts
+7. AI: normalize tags: remove word cases in russian

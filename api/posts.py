@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends
+from sqlalchemy import update
 from sqlalchemy.orm import Session, aliased
 
 from db.session import get_db
@@ -21,17 +22,29 @@ def get_post_tags(
     post_id: int,
     db: Session = Depends(get_db)
 ):
-    post_tags = db.query(PostTags.name, PostTags.probability).filter(PostTags.post_id == post_id)
+    post_tags = db.query(PostTags.id, PostTags.name, PostTags.probability).filter(PostTags.post_id == post_id)
     return convert_data_to_json(post_tags)
 
 
 @router.get("/post_header")
-def get_post_tags(
+def get_post_header(
     post_id: int,
     db: Session = Depends(get_db)
 ):
     header = db.query(PostHeader.title).filter(PostHeader.post_id == post_id).one()[0]
     return header
+
+
+@router.post("/post_header")
+def update_post_header(
+    post_id: int,
+    title: str,
+    db: Session = Depends(get_db)
+):
+    db.execute(update(PostHeader)
+               .where(PostHeader.post_id == post_id)
+               .values(title=title))
+    db.commit()
 
 
 @router.get("/posts")

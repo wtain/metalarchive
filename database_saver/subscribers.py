@@ -1,4 +1,9 @@
-from storage_client.models import Subscriber, SessionLocal
+import logging
+
+from storage_client.models import Subscriber
+
+
+logger = logging.getLogger("uvicorn.info")
 
 
 class SubscribersDatabaseSaver:
@@ -26,4 +31,4 @@ class SubscribersDatabaseSaver:
         self.session.add_all(self.records)
         # self.session.commit()
         # self.session.close()
-        print(f"✅ Subscribers exported to database")
+        logger.info(f"✅ Subscribers exported to database")

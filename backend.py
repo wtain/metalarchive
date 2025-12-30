@@ -5,13 +5,17 @@ from datetime import datetime
 import uvicorn
 from apscheduler.schedulers.background import BackgroundScheduler
 from fastapi import FastAPI
+from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
 from starlette.middleware.cors import CORSMiddleware
+from starlette.responses import Response
 
-from api import subscribers, reports, posts, updater
+from api import subscribers, reports, posts, updater, tags
 from api.updater import update_data
+from metrics.middleware import MetricsMiddleware
+from storage_client.models import SessionLocal
 
 # logger = logging.getLogger(__name__)
-logger = log = logging.getLogger("uvicorn.info")
+logger = logging.getLogger("uvicorn.info")
 
 
 # def heartbeat():
@@ -20,14 +24,14 @@ logger = log = logging.getLogger("uvicorn.info")
 
 def scheduled_update():
     logger.info("Running scheduled update")
-    update_data()
+    update_data(SessionLocal())
 
 
 @asynccontextmanager
 async def lifespan(app:FastAPI):
     scheduler = BackgroundScheduler()
     # scheduler.add_job(heartbeat, "interval", minutes=1)
-    scheduler.add_job(scheduled_update, "interval", hours=1)
+    scheduler.add_job(scheduled_update, "interval", minutes=15)
     scheduler.start()
     yield
 
@@ -48,6 +52,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.add_middleware(MetricsMiddleware)
+
 # @app.on_event('startup')
 # def init_data():
 #     scheduler = BackgroundScheduler()
@@ -60,11 +66,17 @@ app.include_router(subscribers.router, prefix="/api/subscribers", tags=["Subscri
 app.include_router(reports.router, prefix="/api/reports", tags=["Digest"])
 app.include_router(posts.router, prefix="/api/posts", tags=["Posts"])
 app.include_router(updater.router, prefix="/api/updater", tags=["Update"])
+app.include_router(tags.router, prefix="/api/tags", tags=["Tags"])
 
 
 @app.get("/")
 def root():
     return {"message": "Analytics API is running"}
+
+
+@app.get("/metrics")
+def metrics():
+    return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 
 if __name__ == "__main__":

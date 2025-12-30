@@ -1,9 +1,15 @@
+import logging
 from functools import reduce
 
-from sqlalchemy import delete, func
+from sqlalchemy import delete
 
-from storage_client.models import PostMetric, Post, BatchRun
+from aitools.tags import TagsExtractor
+from aitools.title import TitleExtractor
+from storage_client.models import PostMetric, Post, PostTags, PostHeader
 from storage_client.posts import count_reactions
+
+
+logger = logging.getLogger("uvicorn.info")
 
 
 class PostsStatsDatabaseSaver:
@@ -57,5 +63,19 @@ class PostsStatsDatabaseSaver:
             .where(Post.id.in_(map(lambda p: p.id, posts_to_update)))
         )
         self.session.add_all(posts_to_add + posts_to_update)
-        print(f"✅ Posts exported to database - {len(posts_to_add)} posts saved")
-        print(f"✅ Posts exported to database - {len(posts_to_update)} posts updated")
+        logger.info(f"✅ Posts exported to database - {len(posts_to_add)} posts saved")
+        logger.info(f"✅ Posts exported to database - {len(posts_to_update)} posts updated")
+
+        logger.info("Analysing new posts")
+        title_extractor = TitleExtractor()
+        tags_extractor = TagsExtractor()
+        for post in posts_to_add:
+            post_id = post.id
+            text = post.text
+            tags = tags_extractor.get_tags(text)
+            logger.info(f"Extracted tags: {tags}")
+            title = title_extractor.get_title(text)
+            logger.info(f"Extracted title: {title}")
+            for name, probability in tags:
+                self.session.add(PostTags(post_id=post_id, name=name, probability=probability))
+            self.session.add(PostHeader(post_id=post_id, title=title))

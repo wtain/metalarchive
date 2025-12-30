@@ -5,8 +5,8 @@ from storage_client.models import SessionLocal, BatchRun
 
 class DatabaseSession:
 
-    def __init__(self):
-        self.session = SessionLocal()
+    def __init__(self, session = None):
+        self.session = session if session else SessionLocal()
         self.batch_id, self.timestamp = DatabaseSession.start_batch(self.session)
 
     def __enter__(self):

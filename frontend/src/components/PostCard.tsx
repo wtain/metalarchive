@@ -3,9 +3,11 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Button } from "@/components/ui/button"
+import EditableTitle from "../components/EditableTitle"
+import EditableTagList from "../components/EditableTagList"
 import MetricDisplay from "../components/MetricDisplay"
 import TagList from "../components/TagList"
-import { PostChange, Digest, Tag } from "../dto/BackendDataTypes";
+import { PostChange, Digest, TagData } from "../dto/BackendDataTypes";
 import { useNavigate } from "react-router-dom";
 
 interface PostCardProps {
@@ -16,44 +18,53 @@ export default function PostCard({ post }: PostCardProps ) {
 
     const navigate = useNavigate();
 
-    const [title, setTitle] = useState<String>("???");
-    const [tags, setTags] = useState<Tag[]>([]);
+    const [title, setTitle] = useState<string>("???");
+    const [tags, setTags] = useState<TagData[]>([]);
 
     useEffect(() => {
         axios
-          .get<{ data: String }>(`http://127.0.0.1:8001/api/posts/post_header?post_id=${post.post_id}`)
-          .then((res) => setTitle(res.data))
+          .get<{ data: string }>(`http://127.0.0.1:8001/api/posts/post_header?post_id=${post.post_id}`)
+          .then((res) => {
+            // console.log(res.data);
+            // setTitle("AAA")
+            // console.log("AAA");
+            setTitle(res.data)
+          })
           .catch(console.error);
     }, []);
 
     useEffect(() => {
       axios
-        .get<{ data: Tag[] }>(`http://127.0.0.1:8001/api/posts/post_tags?post_id=${post.post_id}`)
+        .get<{ data: TagData[] }>(`http://127.0.0.1:8001/api/posts/post_tags?post_id=${post.post_id}`)
         .then((res) => setTags(res.data))
         .catch(console.error);
   }, []);
 
-  const removeTag = (tag: string) => {
-    setTags((t) => t.filter((x) => x !== tag));
-  };
+  // const removeTag = (tag: string) => {
+  //   setTags((t) => t.filter((x) => x !== tag));
+  // };
 
-  const clickedTag = (tag: string) => {
-    console.log("Clicked tag:", tag);
-  };
+  // const clickedTag = (tag: string) => {
+  //   console.log("Clicked tag:", tag);
+  // };
 
     return (
         <Card className="shadow-md hover:shadow-lg transition">
           <CardHeader>
-            <CardTitle>{post.post_id}. {title}</CardTitle>
+            <CardTitle>
+              {post.post_id}. <EditableTitle postId={post.post_id} initialTitle={title} />
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <TagList
+            {/* Readonly */}
+            {/* <TagList
               tags={tags.map(t => {
                 return t.name;
               })}
               onRemoveTag={removeTag}
               onClickTag={clickedTag}
-            />
+            /> */}
+            <EditableTagList postId={post.post_id} initialTags={tags} />
             <p className="text-sm text-black-500 mb-2">{post.text.substring(0, 200)}...</p>
             { 
               post.views_new != null &&

@@ -2,7 +2,7 @@
 import pandas as pd
 from datetime import datetime
 
-from sqlalchemy import func, literal_column
+from sqlalchemy import func
 from sqlalchemy.orm import aliased
 
 from storage_client.models import SessionLocal, Subscriber, engine, BatchRun
@@ -54,12 +54,11 @@ def load_subscribers_to_df():
 # where s.timestamp=t.timestamp
 # group by t.timestamp
 # order by t.timestamp desc;
-def subscribers_count_over_time(period):
-    session = SessionLocal()
+def subscribers_count_over_time(period, session):
     subscriber = aliased(Subscriber)
     batch_run = aliased(BatchRun)
 
-    if period == "default":
+    if period == "default" or period == "":
         q = (
             session.query(
                 batch_run.timestamp,

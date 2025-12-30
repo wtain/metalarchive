@@ -21,3 +21,19 @@ pip3 install -r requirements.txt
 ```bash
 uvicorn backend:app --reload
 ```
+
+```commandline
+make run
+```
+
+# Metrics
+
+```commandline
+curl http://127.0.0.1:8001/metrics
+```
+
+# Update batch run
+
+```commandline
+curl -X POST http://127.0.0.1:8001/api/updater/update
+```

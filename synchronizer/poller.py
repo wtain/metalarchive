@@ -1,15 +1,21 @@
+import asyncio
+import logging
 
-from environment.secrets import ENCRYPTION_KEY, TELEGRAM_API_ID, TELEGRAM_API_HASH, TELEGRAM_PHONE, CHANNEL_NAME
+from environment.secrets import ENCRYPTION_KEY, TELEGRAM_API_ID, TELEGRAM_API_HASH, TELEGRAM_PHONE
 from storage_client.DatabaseSession import DatabaseSession
 from telegram.TelegramSession import TelegramSession
 from telegram.telegram_client import TelegramTelethonClient
 
 
-async def poll_from_telegram(channelName):
+logger = logging.getLogger("uvicorn.info")
+
+
+async def poll_from_telegram(session, channelName):
 
     async def export_posts(telegram_client, channel, create_saver):
-
+        count = 0
         with create_saver() as saver:
+            logger.info("Loading posts...")
             async for message in telegram_client.list_messages(channel):
                 reactions = message.reactions.to_json() if message.reactions else ""
 
@@ -44,10 +50,13 @@ async def poll_from_telegram(channelName):
                     comments_count,
                     post_content
                 )
+                count += 1
+        return count
 
     async def export_subscribers(telegram_client, channel, create_saver):
+        count = 0
         with create_saver() as saver:
-            print("Fetching subscribers...")
+            logger.info("Fetching subscribers...")
             async for user in telegram_client.list_participants(channel):
                 saver.write_row(
                     user.id,
@@ -55,6 +64,8 @@ async def poll_from_telegram(channelName):
                     user.first_name or "",
                     user.last_name or ""
                 )
+                count += 1
+        return count
 
     with TelegramSession(ENCRYPTION_KEY) as encrypted_session:
         telegram_client = TelegramTelethonClient(encrypted_session, TELEGRAM_API_ID, TELEGRAM_API_HASH)
@@ -63,9 +74,13 @@ async def poll_from_telegram(channelName):
 
         channel = await telegram_client.get_channel(channelName)
 
-        # todo: check SAVER_TYPE here and create appropriate wrapper
-        with DatabaseSession() as session_wrapper:
-            await export_subscribers(telegram_client, channel, lambda: session_wrapper.create_subscribers_saver())
+        with DatabaseSession(session) as session_wrapper:
+            f1 = export_subscribers(telegram_client, channel, lambda: session_wrapper.create_subscribers_saver())
 
-            await export_posts(telegram_client, channel, lambda: session_wrapper.create_posts_saver())
+            f2 = export_posts(telegram_client, channel, lambda: session_wrapper.create_posts_saver())
+
+            logger.info(f"Waiting for background tasks to complete")
+            results = await asyncio.gather(f1, f2)
+            logger.info(f"Results {results}")
+            return results
 
