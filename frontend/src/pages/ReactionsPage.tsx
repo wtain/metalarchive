@@ -5,18 +5,23 @@ import PeriodSelector, { Period } from "../components/PeriodSelector";
 import PostCard from "../components/PostCard";
 import { useNavigate } from "react-router-dom";
 import { Digest } from "../dto/BackendDataTypes";
+import { BasePageProperties } from "@/utils/BasePageProperties";
 
-export default function ReactionsPage() {
+export default function ReactionsPage(props: BasePageProperties) {
   const [period, setPeriod] = useState<Period>("daily");
   const [data, setData] = useState<Digest>({posts: []});
 
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
+  const client = props.metricsClient;
 
   useEffect(() => {
-    axios
-      .get<{ data: Digest }>(`http://127.0.0.1:8001/api/reports/digest?period=${period}`)
-      .then((res) => setData(res.data))
-      .catch(console.error);
+    client
+      .getDigest(period)
+      .then((digest) => setData(digest));
+    // axios
+    //   .get<{ data: Digest }>(`http://127.0.0.1:8001/api/reports/digest?period=${period}`)
+    //   .then((res) => setData(res.data))
+    //   .catch(console.error);
   }, [period]);
 
   return (

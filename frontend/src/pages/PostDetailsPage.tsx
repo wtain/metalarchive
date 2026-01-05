@@ -1,52 +1,52 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
 import ChartCard from "../components/ChartCard";
 import { useParams, Link } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
+import { Post, PostMetricsDataPoint } from "@/dto/BackendDataTypes";
+import { BasePageProperties } from "@/utils/BasePageProperties";
 
-interface Post {
-  post_id: string;
-  text: string;
-}
 
-interface PostMetricsDataPoint {
-   timestamp: string;
-   views: number;
-}
-
-export default function PostDetailsPage() {
+export default function PostDetailsPage(props: BasePageProperties) {
   const { id } = useParams<{ id: string }>();
   const [post, setPost] = useState<Post | null>(null);
   const [views, setViews] = useState<PostMetricsDataPoint[] | null>(null);
 
   const CHANNEL_NAME = "blackholelogs";
 
+  const client = props.metricsClient;
+
   useEffect(() => {
     if (!id) return;
-    axios
-      .get<{ data: Post }>(`http://127.0.0.1:8001/api/posts/post?id=${id}`, {
-          mode: 'no-cors',
-          headers: {
-            'Access-Control-Allow-Origin': '*',
-            'Content-Type': 'application/json',
-          },
-      })
-      .then((data) => setPost(data.data))
-      .catch(console.error);
+    client
+      .getPost(parseInt(id))
+      .then((post) => setPost(post));
+
+    // axios
+    //   .get<{ data: Post }>(`http://127.0.0.1:8001/api/posts/post?id=${id}`, {
+    //       mode: 'no-cors',
+    //       headers: {
+    //         'Access-Control-Allow-Origin': '*',
+    //         'Content-Type': 'application/json',
+    //       },
+    //   })
+    //   .then((data) => setPost(data.data))
+    //   .catch(console.error);
   }, [id]);
 
   useEffect(() => {
     if (!id) return;
-    axios
-      .get<{ data: PostMetricsDataPoint[] }>(`http://127.0.0.1:8001/api/posts/metrics?id=${id}`, {
-          mode: 'no-cors',
-          headers: {
-            'Access-Control-Allow-Origin': '*',
-            'Content-Type': 'application/json',
-          },
-      })
-      .then((data) => setViews(data.data))
-      .catch(console.error);
+    client.getPostMetrics(parseInt(id))
+      .then((data) => setViews(data));
+    // axios
+    //   .get<{ data: PostMetricsDataPoint[] }>(`http://127.0.0.1:8001/api/posts/metrics?id=${id}`, {
+    //       mode: 'no-cors',
+    //       headers: {
+    //         'Access-Control-Allow-Origin': '*',
+    //         'Content-Type': 'application/json',
+    //       },
+    //   })
+    //   .then((data) => setViews(data.data))
+    //   .catch(console.error);
   }, [id]);
 
   if (!post || !views) return <p className="p-6 text-gray-500">Loading...</p>;
@@ -56,7 +56,7 @@ export default function PostDetailsPage() {
   // let regex = new RegExp(/\[(.+)\]\((.+)\)/, "g")
   // var text = post.text.replace(regex, (_, p1, p2) => `<A href=${p2}>${p1}</A>`)
 
-  function mapUrl(originalUrl: String) {
+  function mapUrl(originalUrl: string) {
     // 👇 Your custom logic
     if (originalUrl.startsWith(`https://t.me/${CHANNEL_NAME}/`)) {
       const id = originalUrl.split("/").pop();
@@ -78,7 +78,7 @@ export default function PostDetailsPage() {
         <ReactMarkdown 
           components={{
             a: ({node, href, children, ...props}) => {
-              const newHref = mapUrl(href);
+              const newHref = mapUrl(href!);
         
               return (
                 <a

@@ -2,22 +2,28 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import ChartCard, { ChartDataPoint } from "../components/ChartCard";
 import PeriodSelector, { Period } from "../components/PeriodSelector";
+import { BasePageProperties } from "@/utils/BasePageProperties";
 
-export default function SubscribersPage() {
+export default function SubscribersPage(props: BasePageProperties) {
   const [period, setPeriod] = useState<Period>("default");
   const [data, setData] = useState<ChartDataPoint[]>([]);
 
+  const client = props.metricsClient;
+
   useEffect(() => {
-    axios
-      .get<{ data: ChartDataPoint[] }>(`http://127.0.0.1:8001/api/subscribers/count-over-time?period=${period}`, {
-          mode: 'no-cors',
-          headers: {
-            'Access-Control-Allow-Origin': '*',
-            'Content-Type': 'application/json',
-          },
-      })
-      .then((res) => setData(res.data.data))
-      .catch(console.error);
+    client
+      .getSubscribersCountHistory(period)
+      .then((data) => setData(data));
+    // axios
+    //   .get<{ data: ChartDataPoint[] }>(`http://127.0.0.1:8001/api/subscribers/count-over-time?period=${period}`, {
+    //       mode: 'no-cors',
+    //       headers: {
+    //         'Access-Control-Allow-Origin': '*',
+    //         'Content-Type': 'application/json',
+    //       },
+    //   })
+    //   .then((res) => setData(res.data.data))
+    //   .catch(console.error);
   }, [period]);
 
   return (

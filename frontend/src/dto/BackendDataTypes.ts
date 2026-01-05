@@ -12,6 +12,11 @@ export interface Post {
     post_id: number;
 }
 
+export interface PostMetricsDataPoint {
+    timestamp: string;
+    views: number;
+ }
+
 export interface TagData {
     id: number;
     name: string;
