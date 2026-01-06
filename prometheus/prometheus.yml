@@ -6,4 +6,4 @@ scrape_configs:
   - job_name: "backend"
     metrics_path: /metrics
     static_configs:
-      - targets: ["api:8001"]
+      - targets: ["channel-stats:8001"]

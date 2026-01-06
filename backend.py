@@ -1,4 +1,5 @@
 import logging
+import os
 from contextlib import asynccontextmanager
 from datetime import datetime
 
@@ -11,8 +12,13 @@ from starlette.responses import Response
 
 from api import subscribers, reports, posts, updater, tags
 from api.updater import update_data
+import logging.config
+from logging_config import LOGGING_CONFIG
 from metrics.middleware import MetricsMiddleware
 from storage_client.models import SessionLocal
+
+
+logging.config.dictConfig(LOGGING_CONFIG)
 
 # logger = logging.getLogger(__name__)
 logger = logging.getLogger("uvicorn.info")
@@ -39,10 +45,13 @@ async def lifespan(app:FastAPI):
 app = FastAPI(title="Analytics API", lifespan=lifespan)
 # app = FastAPI(title="Analytics API")
 
-origins = [
-    "http://localhost",
-    "http://localhost:5173",
-]
+origins = os.getenv("CORS_ALLOW_ORIGINS", "").split(",")
+
+
+# origins = [
+#     "http://localhost",
+#     "http://localhost:5173",
+# ]
 
 app.add_middleware(
     CORSMiddleware,
@@ -80,4 +89,7 @@ def metrics():
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="127.0.0.1", port=8001)
+    uvicorn.run(app,
+                host="127.0.0.1",
+                port=8001,
+                log_config=LOGGING_CONFIG)

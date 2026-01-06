@@ -25,7 +25,7 @@ export class SMMetricsClient {
 
     async listPosts(): Promise<Post[]> {
         const result = await axios
-          .get<{ data: Post[] }>(`${this.baseUrl}/api/posts/posts`);
+          .get<{ data: Post[] }>(`${this.baseUrl}/api/posts/posts`, CONFIG);
         return result.data;
     }
 
@@ -43,7 +43,7 @@ export class SMMetricsClient {
 
     async getDigest(period: string): Promise<Digest> {
         const result = await axios
-            .get<{ data: Digest }>(`${this.baseUrl}/api/reports/digest?period=${period}`);
+            .get<{ data: Digest }>(`${this.baseUrl}/api/reports/digest?period=${period}`, CONFIG);
         return result.data;
     }
 
@@ -55,32 +55,32 @@ export class SMMetricsClient {
 
     async getTopPosts(): Promise<Post[]> {
         const result = await axios
-          .get<{ data: Post[] }>(`${this.baseUrl}/api/reports/top`);
+          .get<{ data: Post[] }>(`${this.baseUrl}/api/reports/top`, CONFIG);
         return result.data;
     }
 
     async getPostTitle(id: number): Promise<string> {
         const result = await axios
-            .get<{ data: string }>(`${this.baseUrl}/api/posts/post_header?post_id=${id}`);
+            .get<{ data: string }>(`${this.baseUrl}/api/posts/post_header?post_id=${id}`, CONFIG);
         return result.data;
     }
 
     async getPostTags(id: number): Promise<TagData[]> {
         const result = await axios
-            .get<{ data: TagData[] }>(`${this.baseUrl}/api/posts/post_tags?post_id=${id}`);
+            .get<{ data: TagData[] }>(`${this.baseUrl}/api/posts/post_tags?post_id=${id}`, CONFIG);
         return result.data;
     }
 
     async updatePostTitle(postId: number, newTitle: string) {
-        await axios.post(`${this.baseUrl}/api/posts/post_header?post_id=${postId}&title=${newTitle}`);
+        await axios.post(`${this.baseUrl}/api/posts/post_header?post_id=${postId}&title=${newTitle}`, CONFIG);
     }
 
     async addPostTag(postId: number, tag: string): Promise<TagData> {
-        const result = await axios.post(`${this.baseUrl}/api/tags/add?post_id=${postId}&name=${tag}`);
+        const result = await axios.post(`${this.baseUrl}/api/tags/add?post_id=${postId}&name=${tag}`, CONFIG);
         return result.data;
     }
 
     async deletePostTag(tagId: number) {
-        await axios.delete(`${this.baseUrl}/api/tags/delete?tag_id=${tagId}`);
+        await axios.delete(`${this.baseUrl}/api/tags/delete?tag_id=${tagId}`, CONFIG);
     }
 }

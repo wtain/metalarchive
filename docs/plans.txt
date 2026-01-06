@@ -7,11 +7,15 @@ Frontend:
 6. Remove Cut-off (emojis, "Продолжение...")
 7. Types, linter,...
 8. Subscribers page: interval choice is unnecessary
+9. Default url - / to redirect to /reactions
 
 Backend:
 1. New post - extract tags and title
 2. Scheduling for updates (further: variadic intervals: after new post increase update frequency for some time)
 3. Skip empty updates
+4. Health/heartbeat/status endpoints, liveness probes
+5. Base.metadata.create_all(engine) - dangerous (see: https://chatgpt.com/g/g-p-692c9be86bfc8191ba382b3404b6c3ae-social-media-metrics/c/692c259f-b344-8330-8d0a-bfca9a913248)
+6. Move session to a volume?
 
 Data management:
 1. Migrations (Alembic?)
@@ -59,6 +63,7 @@ Infrastructure:
 2. GitHub actions to build (take care of secrets)
 3. Observability: RPMs, logs
 4. Metrics & observability
+5. Database metrics
 
 Performance
 1. Aggregated queries: get post metrics page data

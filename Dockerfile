@@ -14,6 +14,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY backend.py .
 COPY daily_digest.py .
 COPY log.ini .
+COPY logging_config.py .
 
 COPY stats_session.session.enc .
 
@@ -32,4 +33,5 @@ COPY telegram/ ./telegram/
 # CMD ["python", "channel_stats.py"]
 EXPOSE 8001
 
-CMD ["gunicorn", "--bind", "0.0.0.0:8001", "-k", "uvicorn.workers.UvicornWorker", "backend:app", "--log-config", "log.ini"]
+# , "--log-config", "logging_config.py"
+CMD ["gunicorn", "--bind", "0.0.0.0:8001", "-k", "uvicorn.workers.UvicornWorker", "backend:app"]

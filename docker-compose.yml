@@ -2,12 +2,14 @@ version: '3.9'
 
 networks:
   appnet:
+    driver: bridge
   monitoring:
+    driver: bridge
 
 services:
   db:
     image: timescale/timescaledb:latest-pg15
-    container_name: timescaledb
+    container_name: metrics_database
     networks:
       - appnet
     ports:
@@ -17,24 +19,39 @@ services:
       POSTGRES_PASSWORD: admin
       POSTGRES_DB: telegram_metrics
     volumes:
-      - ./pgdata:/var/lib/postgresql/data
+      - ./Storage/pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U admin -d telegram_metrics" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   backend:
-    image: .
+    build:
+      context: .
     container_name: channel-stats
     networks:
       - appnet
       - monitoring
     ports:
       - 8001:8001
+    # File-logging should be removed when going to k8s
+    volumes:
+      - ./logs:/var/log/app
     env_file:
       - ./.env
+    depends_on:
+      db:
+        condition: service_healthy
 
   frontend:
-    image: ./frontend
+    build:
+      context: ./frontend
     container_name: frontend
     ports:
       - 80:80
+    depends_on:
+      - backend
 
   prometheus:
     image: prom/prometheus:latest
@@ -63,3 +80,4 @@ services:
 volumes:
   prometheus_data:
   grafana_data:
+  logs:
