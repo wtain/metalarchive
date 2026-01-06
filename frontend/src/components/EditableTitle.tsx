@@ -1,18 +1,19 @@
 import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { SMMetricsClient } from "@/client/SMMetricsClient";
 
 interface EditableTitleProps {
   postId: number;
   initialTitle: string;
+  client: SMMetricsClient;
 }
 
+// todo: to utils
 const useFocus = () => {
     const htmlElRef = useRef<HTMLInputElement>(null)
     const setFocus = () => {
-        console.log(1);
         if (htmlElRef.current) {
-            console.log(2);
             htmlElRef.current.focus();
             htmlElRef.current.select();
         }
@@ -21,7 +22,7 @@ const useFocus = () => {
     return [ htmlElRef, setFocus ] 
 }
 
-export default function EditableTitle({ postId, initialTitle }: EditableTitleProps) {
+export default function EditableTitle({ postId, initialTitle, client }: EditableTitleProps) {
   const [title, setTitle] = useState<string>(initialTitle);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -41,9 +42,7 @@ export default function EditableTitle({ postId, initialTitle }: EditableTitlePro
   const saveTitle = async () => {
     setSaving(true);
     try {
-      await fetch(`http://127.0.0.1:8001/api/posts/post_header?post_id=${postId}&title=${encodeURIComponent(title)}`, {
-        method: "POST",
-      });
+      await client.updatePostTitle(postId, encodeURIComponent(title));
       setSaved(true);
       setTimeout(() => setSaved(false), 1500);
     } finally {

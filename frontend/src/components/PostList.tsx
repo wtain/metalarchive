@@ -1,13 +1,15 @@
 
-import React, { useEffect, useState } from "react";
+import { SMMetricsClient } from "@/client/SMMetricsClient";
+import React from "react";
 import PostCard from "../components/PostCard";
 import { Post } from "../dto/BackendDataTypes";
 
 interface PostListProps {
     posts: Post[];
+    client: SMMetricsClient;
 }
 
-export default function PostList({ posts }: PostListProps) {
+export default function PostList({ posts, client }: PostListProps) {
     if (posts.length == 0) {
         return (
             <div>Loading...</div>
@@ -20,7 +22,7 @@ export default function PostList({ posts }: PostListProps) {
             <main className="flex-1 container mx-auto p-6 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {
                   posts.map(post =>
-                    <PostCard post={post} key={post.post_id} />
+                    <PostCard post={post} key={post.post_id} client={client} />
                   )
               }
             </main>

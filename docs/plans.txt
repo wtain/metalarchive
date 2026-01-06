@@ -46,6 +46,13 @@ Technical debt:
 15. Data sanitization
 16. Remove unused fields
 17. Metrics & observability
+18. Code cleanup
+19. Batch save complete flag
+20. Frontend: error handling (unified)
+21. Frontend: types and issues reported
+22. Frontend: Linter
+23. Frontend: Tests
+24. Frontend: folder structure
 
 Infrastructure:
 1. Containerize. Docker compose, Swarm, or k8s?

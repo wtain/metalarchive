@@ -1,8 +1,20 @@
 
 import { ChartDataPoint } from "@/components/ChartCard";
-import { Digest, Post, PostMetricsDataPoint } from "@/dto/BackendDataTypes";
+import { Digest, Post, PostMetricsDataPoint, TagData } from "@/dto/BackendDataTypes";
 import axios from "axios";
 
+const HEADERS = {
+    'Access-Control-Allow-Origin': '*',
+    'Content-Type': 'application/json',
+};
+
+const CONFIG = {
+    mode: 'no-cors',
+    headers: HEADERS,
+};
+
+// todo: segregate?
+// todo: /api part to "apiUrl"?
 export class SMMetricsClient {
 
     baseUrl: string;
@@ -18,27 +30,14 @@ export class SMMetricsClient {
     }
 
     async getPost(id: number): Promise<Post> {
-        // http://127.0.0.1:8001
         const result = await axios
-            .get<{ data: Post }>(`${this.baseUrl}/api/posts/post?id=${id}`, {
-                mode: 'no-cors',
-                headers: {
-                'Access-Control-Allow-Origin': '*',
-                'Content-Type': 'application/json',
-                },
-            });
+            .get<{ data: Post }>(`${this.baseUrl}/api/posts/post?id=${id}`, CONFIG);
         return result.data;
     }
 
     async getPostMetrics(postId: number): Promise<PostMetricsDataPoint[]> {
         const result = await axios
-        .get<{ data: PostMetricsDataPoint[] }>(`${this.baseUrl}/api/posts/metrics?id=${postId}`, {
-            mode: 'no-cors',
-            headers: {
-                'Access-Control-Allow-Origin': '*',
-                'Content-Type': 'application/json',
-            },
-        });
+        .get<{ data: PostMetricsDataPoint[] }>(`${this.baseUrl}/api/posts/metrics?id=${postId}`, CONFIG);
         return result.data;
     }
 
@@ -50,13 +49,7 @@ export class SMMetricsClient {
 
     async getSubscribersCountHistory(period: string): Promise<ChartDataPoint[]> {
       const result = await axios
-        .get<{ data: ChartDataPoint[] }>(`${this.baseUrl}/api/subscribers/count-over-time?period=${period}`, {
-            mode: 'no-cors',
-            headers: {
-                'Access-Control-Allow-Origin': '*',
-                'Content-Type': 'application/json',
-            },
-        });
+        .get<{ data: ChartDataPoint[] }>(`${this.baseUrl}/api/subscribers/count-over-time?period=${period}`, CONFIG);
         return result.data.data;
     }
 
@@ -64,5 +57,30 @@ export class SMMetricsClient {
         const result = await axios
           .get<{ data: Post[] }>(`${this.baseUrl}/api/reports/top`);
         return result.data;
+    }
+
+    async getPostTitle(id: number): Promise<string> {
+        const result = await axios
+            .get<{ data: string }>(`${this.baseUrl}/api/posts/post_header?post_id=${id}`);
+        return result.data;
+    }
+
+    async getPostTags(id: number): Promise<TagData[]> {
+        const result = await axios
+            .get<{ data: TagData[] }>(`${this.baseUrl}/api/posts/post_tags?post_id=${id}`);
+        return result.data;
+    }
+
+    async updatePostTitle(postId: number, newTitle: string) {
+        await axios.post(`${this.baseUrl}/api/posts/post_header?post_id=${postId}&title=${newTitle}`);
+    }
+
+    async addPostTag(postId: number, tag: string): Promise<TagData> {
+        const result = await axios.post(`${this.baseUrl}/api/tags/add?post_id=${postId}&name=${tag}`);
+        return result.data;
+    }
+
+    async deletePostTag(tagId: number) {
+        await axios.delete(`${this.baseUrl}/api/tags/delete?tag_id=${tagId}`);
     }
 }

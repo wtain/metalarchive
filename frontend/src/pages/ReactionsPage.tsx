@@ -1,9 +1,7 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import PeriodSelector, { Period } from "../components/PeriodSelector";
 import PostCard from "../components/PostCard";
-import { useNavigate } from "react-router-dom";
 import { Digest } from "../dto/BackendDataTypes";
 import { BasePageProperties } from "@/utils/BasePageProperties";
 
@@ -11,17 +9,12 @@ export default function ReactionsPage(props: BasePageProperties) {
   const [period, setPeriod] = useState<Period>("daily");
   const [data, setData] = useState<Digest>({posts: []});
 
-  // const navigate = useNavigate();
   const client = props.metricsClient;
 
   useEffect(() => {
     client
       .getDigest(period)
       .then((digest) => setData(digest));
-    // axios
-    //   .get<{ data: Digest }>(`http://127.0.0.1:8001/api/reports/digest?period=${period}`)
-    //   .then((res) => setData(res.data))
-    //   .catch(console.error);
   }, [period]);
 
   return (
@@ -41,7 +34,7 @@ export default function ReactionsPage(props: BasePageProperties) {
       <main className="flex-1 container mx-auto p-6 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
       {
           data.posts.map(post =>
-            <PostCard post={post} key={post.post_id} />
+            <PostCard post={post} key={post.post_id} client={client} />
           )
       }
       </main>

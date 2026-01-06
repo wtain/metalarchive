@@ -13,13 +13,9 @@ export default function TopPostsPage(props: BasePageProperties) {
         client
             .getTopPosts()
             .then((posts) => setPosts(posts));
-        // axios
-        //   .get<{ data: Post[] }>(`http://127.0.0.1:8001/api/reports/top`)
-        //   .then((res) => setPosts(res.data))
-        //   .catch(console.error);
     }, []);
 
     return (
-        <PostList posts={posts} />
+        <PostList posts={posts} client={client} />
     )
 }

@@ -20,41 +20,15 @@ export default function PostDetailsPage(props: BasePageProperties) {
     client
       .getPost(parseInt(id))
       .then((post) => setPost(post));
-
-    // axios
-    //   .get<{ data: Post }>(`http://127.0.0.1:8001/api/posts/post?id=${id}`, {
-    //       mode: 'no-cors',
-    //       headers: {
-    //         'Access-Control-Allow-Origin': '*',
-    //         'Content-Type': 'application/json',
-    //       },
-    //   })
-    //   .then((data) => setPost(data.data))
-    //   .catch(console.error);
   }, [id]);
 
   useEffect(() => {
     if (!id) return;
     client.getPostMetrics(parseInt(id))
       .then((data) => setViews(data));
-    // axios
-    //   .get<{ data: PostMetricsDataPoint[] }>(`http://127.0.0.1:8001/api/posts/metrics?id=${id}`, {
-    //       mode: 'no-cors',
-    //       headers: {
-    //         'Access-Control-Allow-Origin': '*',
-    //         'Content-Type': 'application/json',
-    //       },
-    //   })
-    //   .then((data) => setViews(data.data))
-    //   .catch(console.error);
   }, [id]);
 
   if (!post || !views) return <p className="p-6 text-gray-500">Loading...</p>;
-
-  // var text = post.text
-
-  // let regex = new RegExp(/\[(.+)\]\((.+)\)/, "g")
-  // var text = post.text.replace(regex, (_, p1, p2) => `<A href=${p2}>${p1}</A>`)
 
   function mapUrl(originalUrl: string) {
     // 👇 Your custom logic
@@ -98,71 +72,3 @@ export default function PostDetailsPage(props: BasePageProperties) {
     </div>
   );
 }
-
-
-/*
-
-<ReactMarkdown
-  components={{
-    a: ({node, ...props}) => (
-      <a {...props} className="text-blue-600 underline" target="_blank"/>
-    )
-  }}
->
-  {post.text}
-</ReactMarkdown>
-
-
-<ReactMarkdown
-  components={{
-    a: ({node, href, children, ...props}) => {
-      const newHref = mapUrl(href);
-
-      return (
-        <a
-          href={newHref}
-          className="text-blue-600 underline"
-          target="_blank"
-          rel="noopener noreferrer"
-          {...props}
-        >
-          {children}
-        </a>
-      );
-    }
-  }}
->
-
-
-<ReactMarkdown
-  components={{
-    a: ({node, href, children, ...props}) => {
-      const route = mapHrefToRoute(href);
-
-      if (route) {
-        return (
-          <Link to={route} className="text-blue-600 underline">
-            {children}
-          </Link>
-        );
-      }
-
-      // default external link
-      return (
-        <a
-          href={href}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-blue-600 underline"
-          {...props}
-        >
-          {children}
-        </a>
-      );
-    }
-  }}
->
-  {post.text}
-</ReactMarkdown>
-
- */

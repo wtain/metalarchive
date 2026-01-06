@@ -20,7 +20,7 @@ export interface PostMetricsDataPoint {
 export interface TagData {
     id: number;
     name: string;
-    probability: number;
+    probability?: number;
 }
 
 export interface PostChange extends Post {
