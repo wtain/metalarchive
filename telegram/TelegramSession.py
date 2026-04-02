@@ -2,7 +2,7 @@ import os
 
 from cryptography.fernet import Fernet
 
-SESSION_SESSION_ENC = "stats_session.session.enc"
+SESSION_SESSION_ENC = "/var/lib/telegram/stats_session.session.enc"
 
 STATS_SESSION_SESSION = "/tmp/stats_session.session"
 

@@ -5,7 +5,9 @@ from operator import and_
 from sqlalchemy import func, or_
 from sqlalchemy.orm import aliased
 
-from storage_client.models import SessionLocal, BatchRun, PostMetric, Subscriber, Post
+from storage_client.db_sync import SessionLocal
+# from storage_client.models import SessionLocal, BatchRun, PostMetric, Subscriber, Post
+from storage_client.models import BatchRun, PostMetric, Subscriber, Post
 
 
 logger = logging.getLogger("uvicorn.info")

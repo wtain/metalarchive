@@ -1,13 +1,14 @@
 Frontend:
-1. (DONE) Translate links: from Telegram links to internal routing
-2. (DONE) Add/remove tags
-3. (DONE) Change title
-4. Display: Publication time
-5. Publishing ability
-6. Remove Cut-off (emojis, "Продолжение...")
-7. Types, linter,...
-8. Subscribers page: interval choice is unnecessary
-9. Default url - / to redirect to /reactions
+ 1. (DONE) Translate links: from Telegram links to internal routing
+ 2. (DONE) Add/remove tags
+ 3. (DONE) Change title
+ 4. Display: Publication time
+ 5. Publishing ability
+ 6. Remove Cut-off (emojis, "Продолжение...")
+ 7. Types, linter,...
+ 8. Subscribers page: interval choice is unnecessary
+ 9. Default url - / to redirect to /reactions
+10. Range for the graph
 
 Backend:
 1. New post - extract tags and title
@@ -16,6 +17,9 @@ Backend:
 4. Health/heartbeat/status endpoints, liveness probes
 5. Base.metadata.create_all(engine) - dangerous (see: https://chatgpt.com/g/g-p-692c9be86bfc8191ba382b3404b6c3ae-social-media-metrics/c/692c259f-b344-8330-8d0a-bfca9a913248)
 6. Move session to a volume?
+7. Does scheduler work?
+8. Parallel updates? E.g., scheduler running and update request comes in
+9. Async database engine
 
 Data management:
 1. Migrations (Alembic?)
@@ -57,6 +61,18 @@ Technical debt:
 22. Frontend: Linter
 23. Frontend: Tests
 24. Frontend: folder structure
+25. Move away to a separate repo
+26. Groom this todo-list
+27. Semaphore for batch running
+28. Or queues for async processing
+29. Prometheus volume?
+30. Error: scratch_9: event loop is closed
+31. Race condition: when post is updated, tags and titles update is in progress, database gets corrupted
+32. Todo: task schediling and smaller tasks
+33. Similar stories (embeddings)
+34. Error metrics
+35. Dashboards
+36. Use mounts instead of copying files into container
 
 Infrastructure:
 1. Containerize. Docker compose, Swarm, or k8s?
@@ -71,6 +87,12 @@ Performance
 3. Async use of postgres?
 4. WARNING: Security error while unpacking a received message: Too many messages had to be ignored consecutively
 
+Security:
+1. Telegram session to be stored in a docker volume
+2. Postgres credentials should be non-standard
+3. Connection string for the database to be changed to structured credentials
+4. Database password in connection string
+
 Issues:
  1. (Fixed) Some failures on new post (see scratch_5)
  2. Errors for comments to posts 1 & 2
@@ -83,6 +105,9 @@ Issues:
  9. Async workers cleanup seems to be wrong still
 10. (Error) See scratch_6
 11. Locks? Parallel updates?
+12. Scratch_7 - deletion issue (intermittent?)
+13. Use non-standard passwords for database
+14. Use official API instead of Telethon?
 
 Documentation:
 1. Architecture
@@ -97,3 +122,8 @@ Features:
 5. Build derived views: e.g. daily totals (background jobs)
 6. Forwards counts
 7. AI: normalize tags: remove word cases in russian
+8. Include number of subscribers change per day/month/...
+9. Subscribers statistics
+
+Optimisaztions:
+1. Server-side page data preparation - minimize number of API calls from the frontend

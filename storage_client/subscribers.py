@@ -5,7 +5,9 @@ from datetime import datetime
 from sqlalchemy import func
 from sqlalchemy.orm import aliased
 
-from storage_client.models import SessionLocal, Subscriber, engine, BatchRun
+from storage_client.db_sync import SessionLocal, engine
+# from storage_client.models import SessionLocal, Subscriber, engine, BatchRun
+from storage_client.models import Subscriber, BatchRun
 from storage_client.utils import coerce_string
 
 

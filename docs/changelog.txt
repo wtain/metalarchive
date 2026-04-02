@@ -1,0 +1,7 @@
+2026-01-07:
+- Excluded session from the docker image, moved to a volume instead
+- Parameterised database credentials
+
+2026-01-10:
+- Alembic migrations (baseline migration added), revamp of database interaction
+- Dump and restore scripts

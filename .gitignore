@@ -9,10 +9,13 @@ results/
 *.enc
 
 .env
+.env-docker
 telegram_token.txt
 telegram_api_id.txt
 telegram_api_hash.txt
 telegram_phone.txt
+
+secrets/
 
 __pycache__
 

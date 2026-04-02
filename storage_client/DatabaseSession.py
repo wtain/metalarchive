@@ -1,6 +1,8 @@
 from database_saver.posts import PostsStatsDatabaseSaver
 from database_saver.subscribers import SubscribersDatabaseSaver
-from storage_client.models import SessionLocal, BatchRun
+from storage_client.db_sync import SessionLocal
+# from storage_client.models import SessionLocal, BatchRun
+from storage_client.models import BatchRun
 
 
 class DatabaseSession:

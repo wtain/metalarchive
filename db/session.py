@@ -1,5 +1,7 @@
+from storage_client.db_sync import SessionLocal
 
-from storage_client.models import SessionLocal
+
+# from storage_client.models import SessionLocal
 
 
 # Dependency for routes

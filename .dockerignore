@@ -1,4 +1,5 @@
 .env
+.env-docker
 telegram_token.txt
 telegram_api_id.txt
 telegram_api_hash.txt

@@ -10,13 +10,15 @@ COPY requirements.txt .
 # Install dependencies (if you have requirements.txt)
 RUN pip install --no-cache-dir -r requirements.txt
 
+# todo: use mounts instead of copying
+
 # Copy your script
 COPY backend.py .
 COPY daily_digest.py .
-COPY log.ini .
+# COPY log.ini .
 COPY logging_config.py .
 
-COPY stats_session.session.enc .
+# COPY secrets/stats_session.session.enc .
 
 COPY csv_saver/ ./csv_saver/
 COPY database_saver/ ./database_saver/

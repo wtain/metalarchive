@@ -1,6 +1,8 @@
 import json
 
-from storage_client.models import SessionLocal, PostMetric, engine, Subscriber
+from storage_client.db_sync import SessionLocal, engine
+# from storage_client.models import SessionLocal, PostMetric, engine, Subscriber
+from storage_client.models import PostMetric
 import pandas as pd
 
 from storage_client.utils import coerce_int
@@ -25,7 +27,7 @@ def count_reactions(reactions) -> int:
     if reactions == '':
         return 0
     data = json.loads(reactions)
-    return int(data["results"][0]['count'])
+    return sum(int(reaction['count']) for reaction in data["results"])
 
 
 def save_posts_from_df(df: pd.DataFrame):
@@ -35,7 +37,8 @@ def save_posts_from_df(df: pd.DataFrame):
             post_id=row["message_id"],
             timestamp=pd.to_datetime(row["date"]),
             views=row["views"],
-            reactions=count_reactions(row["reactions"]),
+            reactions=
+            count_reactions(row["reactions"]),
             comments=coerce_int(row["comments"]),
         )
         for _, row in df.iterrows()

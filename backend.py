@@ -5,6 +5,7 @@ from datetime import datetime
 
 import uvicorn
 from apscheduler.schedulers.background import BackgroundScheduler
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
 from starlette.middleware.cors import CORSMiddleware
@@ -15,8 +16,13 @@ from api.updater import update_data
 import logging.config
 from logging_config import LOGGING_CONFIG
 from metrics.middleware import MetricsMiddleware
-from storage_client.models import SessionLocal
+from storage_client.db_sync import SessionLocal
 
+# from storage_client.models import SessionLocal
+
+# load_dotenv()
+
+# context.config.set_main_option('sqlalchemy.url', os.getenv('DATABASE_URL'))
 
 logging.config.dictConfig(LOGGING_CONFIG)
 
