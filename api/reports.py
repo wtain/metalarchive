@@ -65,8 +65,7 @@ def get_digest(
                 "comments_old": comments_old,"comments_new": comments_new, "comments_diff": comments_diff}
 
     # todo: move conversion to the function itself
-    posts_diff = list(filter(lambda r: r["views_diff"] > 0 or r["reactions_diff"] > 0 or r["comments_diff"] > 0,
-                             map(convert_row, diff)))
+    posts_diff = list(map(convert_row, diff))
     subscribers_diff = get_subscribers_diffs(db, reference_run_id, latest_run_id)
 
     views_total = sum(map(lambda diff: diff["views_diff"], posts_diff))

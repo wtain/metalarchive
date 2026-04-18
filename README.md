@@ -43,3 +43,16 @@ curl -X POST http://127.0.0.1:8001/api/updater/update
 ```commandline
 docker exec -it grafana grafana-cli admin reset-admin-password admin
 ```
+
+# Run locally without docker
+```commandline
+LOG_PATH=. uvicorn backend:app --reload --port 8002 --env-file .env
+```
+
+# Reset grafana admin password (dev setup)
+
+Set default admin/admin credentials (you will be asked to change password upon next login)
+
+```commandline
+docker exec -ti grafana grafana cli admin reset-admin-password admin      
+```

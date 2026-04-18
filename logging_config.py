@@ -1,7 +1,11 @@
 import logging.config
+import os
 from pathlib import Path
 
-LOG_DIR = Path("/var/log/app")
+LOG_PATH = "/var/log/app"
+LOG_PATH = os.getenv('LOG_PATH', LOG_PATH)
+LOG_DIR = Path(LOG_PATH)
+print(f"Logs path: {LOG_DIR}")
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 
 LOG_FILE = LOG_DIR / "app.log"
@@ -48,7 +52,13 @@ LOGGING_CONFIG = {
         "app": {
             "handlers": ["console", "file"],
             "level": "INFO",
-            "propagate": False,
+            "propagate": True,
+        },
+
+        "digest": {
+            "handlers": ["console", "file"],
+            "level": "INFO",
+            "propagate": True,
         },
 
         # Uvicorn internal logs

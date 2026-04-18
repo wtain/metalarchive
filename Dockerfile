@@ -10,7 +10,7 @@ COPY requirements.txt .
 # Install dependencies (if you have requirements.txt)
 RUN pip install --no-cache-dir -r requirements.txt
 
-# todo: use mounts instead of copying
+# todo: use mounts instead of copying - for dev, for prod baking-in is right
 
 # Copy your script
 COPY backend.py .

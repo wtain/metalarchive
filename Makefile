@@ -13,7 +13,8 @@ run: build
 
 
 run-all: build
-	docker-compose --env-file .env-docker up
+	# Added --build to force rebuild. When backend code is moved to volumes that must be removed?
+	docker-compose --env-file .env-docker up --build
 
 
 freeze:

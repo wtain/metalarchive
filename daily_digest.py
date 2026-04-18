@@ -9,8 +9,8 @@ from storage_client.db_sync import SessionLocal
 # from storage_client.models import SessionLocal, BatchRun, PostMetric, Subscriber, Post
 from storage_client.models import BatchRun, PostMetric, Subscriber, Post
 
-
-logger = logging.getLogger("uvicorn.info")
+# doesn't work here?
+logger = logging.getLogger("digest")
 
 
 def get_last_run(day):
@@ -31,38 +31,58 @@ def get_last_run(day):
 
 
 def get_post_diffs(session, old_run_id, new_run_id):
+    post = aliased(Post)
     p1 = aliased(PostMetric)
     p2 = aliased(PostMetric)
 
+    views_diff_column = (func.coalesce(p2.views, 0) - func.coalesce(p1.views, 0)).label("views_diff")
+    reactions_diff_column = (func.coalesce(p2.reactions, 0) - func.coalesce(p1.reactions, 0)).label("reactions_diff")
+    comments_diff_column = (func.coalesce(p2.comments, 0) - func.coalesce(p1.comments, 0)).label("comments_diff")
     query = (
         session.query(
-            Post.text,
-            func.coalesce(p1.post_id, p2.post_id).label("post_id"),
+            post.text,
+            post.id,
             p1.views.label("views_old"),
             p2.views.label("views_new"),
-            (func.coalesce(p2.views, 0) - func.coalesce(p1.views, 0)).label("views_diff"),
+            views_diff_column,
             p1.reactions.label("reactions_old"),
             p2.reactions.label("reactions_new"),
-            (func.coalesce(p2.reactions, 0) - func.coalesce(p1.reactions, 0)).label("reactions_diff"),
+            reactions_diff_column,
             p1.comments.label("comments_old"),
             p2.comments.label("comments_new"),
-            (func.coalesce(p2.comments, 0) - func.coalesce(p1.comments, 0)).label("comments_diff"),
+            comments_diff_column,
         )
-        .outerjoin(p2, p1.post_id == p2.post_id)
-        .join(Post, Post.id == p2.post_id)
-        .filter(or_(p1.run_id == old_run_id, p1.run_id is None))   # left side
-        .filter(or_(p2.run_id == new_run_id, p2.run_id is None))   # right side
-    )
-
-    query = query.filter(
-        or_(
-            (func.coalesce(p2.views, 0) - func.coalesce(p1.views, 0)) > 0,
-            (func.coalesce(p2.reactions, 0) - func.coalesce(p1.reactions, 0)) > 0,
-            (func.coalesce(p2.comments, 0) - func.coalesce(p1.comments, 0)) > 0
+        .outerjoin(
+            p1,
+            and_(
+                p1.post_id == post.id,
+                p1.run_id == old_run_id
+            )
+        )
+        .outerjoin(
+            p2,
+            and_(
+                p2.post_id == post.id,
+                p2.run_id == new_run_id
+            )
+        ).filter(
+            or_(
+                views_diff_column > 0,
+                reactions_diff_column > 0,
+                comments_diff_column > 0
+            )
+        ).order_by(
+            post.id.desc(),
+            p1.post_id.desc(),
+            p2.post_id.desc(),
         )
     )
+    query = query.distinct(post.id)
 
-    return query.all()
+    logger.info(str(query.statement.compile(compile_kwargs={"literal_binds": True})))
+
+    # return query.all()
+    return session.execute(query.statement).fetchall()
 
 
 def get_subscribers_diffs(session, old_run_id, new_run_id):

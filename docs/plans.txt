@@ -11,15 +11,16 @@ Frontend:
 10. Range for the graph
 
 Backend:
-1. New post - extract tags and title
-2. Scheduling for updates (further: variadic intervals: after new post increase update frequency for some time)
-3. Skip empty updates
-4. Health/heartbeat/status endpoints, liveness probes
-5. Base.metadata.create_all(engine) - dangerous (see: https://chatgpt.com/g/g-p-692c9be86bfc8191ba382b3404b6c3ae-social-media-metrics/c/692c259f-b344-8330-8d0a-bfca9a913248)
-6. Move session to a volume?
-7. Does scheduler work?
-8. Parallel updates? E.g., scheduler running and update request comes in
-9. Async database engine
+ 1. New post - extract tags and title
+ 2. Scheduling for updates (further: variadic intervals: after new post increase update frequency for some time)
+ 3. Skip empty updates
+ 4. Health/heartbeat/status endpoints, liveness probes
+ 5. Base.metadata.create_all(engine) - dangerous (see: https://chatgpt.com/g/g-p-692c9be86bfc8191ba382b3404b6c3ae-social-media-metrics/c/692c259f-b344-8330-8d0a-bfca9a913248)
+ 6. Move session to a volume?
+ 7. Does scheduler work?
+ 8. Parallel updates? E.g., scheduler running and update request comes in
+ 9. Async database engine
+10. Logging doesn't work in reports?
 
 Data management:
 1. Migrations (Alembic?)

@@ -1,4 +1,14 @@
 import logging
+import logging.config
+from logging_config import LOGGING_CONFIG
+
+logging.config.dictConfig(LOGGING_CONFIG)
+
+# logger = logging.getLogger(__name__)
+logger = logging.getLogger("uvicorn.info")
+
+logging.getLogger('apscheduler').setLevel(logging.INFO)
+
 import os
 from contextlib import asynccontextmanager
 from datetime import datetime
@@ -13,8 +23,7 @@ from starlette.responses import Response
 
 from api import subscribers, reports, posts, updater, tags
 from api.updater import update_data
-import logging.config
-from logging_config import LOGGING_CONFIG
+
 from metrics.middleware import MetricsMiddleware
 from storage_client.db_sync import SessionLocal
 
@@ -24,10 +33,7 @@ from storage_client.db_sync import SessionLocal
 
 # context.config.set_main_option('sqlalchemy.url', os.getenv('DATABASE_URL'))
 
-logging.config.dictConfig(LOGGING_CONFIG)
 
-# logger = logging.getLogger(__name__)
-logger = logging.getLogger("uvicorn.info")
 
 
 # def heartbeat():
@@ -39,9 +45,11 @@ def scheduled_update():
     update_data(SessionLocal())
 
 
+
 @asynccontextmanager
 async def lifespan(app:FastAPI):
     scheduler = BackgroundScheduler()
+    app.state.scheduler = scheduler
     # scheduler.add_job(heartbeat, "interval", minutes=1)
     scheduler.add_job(scheduled_update, "interval", minutes=15)
     scheduler.start()
