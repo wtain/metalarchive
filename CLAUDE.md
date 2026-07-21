@@ -10,27 +10,19 @@ The **active application** is: `backend.py` (FastAPI entrypoint) + `api/` + `sto
 
 ## Commands
 
-Backend (run from repo root):
+See **[docs/environments.md](docs/environments.md)** for the full picture of how to run this locally: the full docker-compose stack (production-like, rebuild-per-change) vs. hot-reload dev mode (`uvicorn --reload` + Vite dev server, db-only in docker). Quick reference:
+
 ```bash
-# local run without docker (loads .env, writes logs to current dir)
-LOG_PATH=. uvicorn backend:app --reload --port 8002 --env-file .env
-
-# via Makefile (docker build + run, joins existing storage_appnet)
-make run
-
-# full stack: db + backend + frontend + prometheus + grafana
+# full stack: db + backend + frontend + prometheus + grafana (rebuild required per code change)
 make run-all   # docker-compose --env-file .env-docker up --build
+
+# local dev, hot reload — db in docker, backend/frontend run natively
+docker-compose --env-file .env-docker up -d db
+LOG_PATH=. uvicorn backend:app --reload --port 8001 --env-file .env
+cd frontend && npm install && npm run dev   # vite dev server, HMR, http://localhost:5173
 
 # regenerate requirements.txt after installing new deps
 make freeze
-```
-
-Frontend (run from `frontend/`):
-```bash
-npm install
-npm run dev       # vite dev server
-npm run build
-npm run preview
 ```
 
 Database / migrations (alembic reads `DATABASE_URL` from `.env`):
@@ -80,7 +72,7 @@ There is no test suite in this repo yet (see `docs/plans.txt` "Technical debt" �
 
 Routes generally take a raw `Session` and hand-build SQLAlchemy queries (aliased joins, `func.coalesce` for diffing) rather than going through a repository layer — expect to write SQL-shaped queries directly in route handlers, and expect DB rows/DTOs to be loosely typed (`api/posts.py::convert_data_to_json` reflects column names off the query itself).
 
-**Frontend (`frontend/`)**: Vite + React + TypeScript + Tailwind + shadcn/ui + recharts, React Router. `SMMetricsClient` (`src/client/SMMetricsClient.tsx`) is the single hand-written API client wrapping axios calls to the backend routes above — add new backend endpoints there and to `src/dto/BackendDataTypes.ts` when wiring up new UI data. Pages live in `src/pages/` (Reactions, Top Posts, Subscribers, Post List/Details); `public/config.json` supplies runtime config (e.g. backend base URL) separate from build-time env.
+**Frontend (`frontend/`)**: Vite + React + TypeScript + Tailwind + shadcn/ui + recharts, React Router. `SMMetricsClient` (`src/client/SMMetricsClient.tsx`) is the single hand-written API client wrapping axios calls to the backend routes above — add new backend endpoints there and to `src/dto/BackendDataTypes.ts` when wiring up new UI data. Pages live in `src/pages/` (Reactions, Top Posts, Subscribers, Post List/Details). The API base URL is hardcoded to `http://127.0.0.1:8001` in `src/main.tsx`; `public/config.json`'s `apiBaseUrl` looks like runtime config but isn't actually read anywhere yet.
 
 **Config / secrets**: All config comes from env vars via `python-dotenv` (`environment/secrets.py` for Telegram/encryption secrets; `.env` for local runs, `.env-docker` for docker-compose). `CHANNEL_NAME` is currently a single hardcoded channel — multi-channel/multi-tenant support is not implemented (see `docs/plans.txt`). The Telegram session file must be encrypted at rest; `encryption_script.py` is the helper for producing `secrets/stats_session.session.enc` from a plaintext session.
 
