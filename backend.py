@@ -39,6 +39,8 @@ from storage_client.db_sync import SessionLocal
 # def heartbeat():
 #     logger.info(datetime.now())
 
+# todo: Daily report to push into telegram chat
+
 
 def scheduled_update():
     logger.info("Running scheduled update")

@@ -21,6 +21,7 @@ Backend:
  8. Parallel updates? E.g., scheduler running and update request comes in
  9. Async database engine
 10. Logging doesn't work in reports?
+11. Daily digest - to telegram
 
 Data management:
 1. Migrations (Alembic?)
