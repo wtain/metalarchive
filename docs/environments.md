@@ -45,6 +45,8 @@ This uses `.env`, not `.env-docker` — `.env` has `DB_HOST=localhost` (talking 
 
 Note the in-process `APScheduler` job (channel poll every 15 minutes, see `backend.py`) still runs under `--reload`; each auto-reload restarts it.
 
+Triggering a scrape (manually via `/api/updater/update`, or via the scheduler) reads the encrypted Telegram session from `TELEGRAM_SESSION_ENC_PATH` (`telegram/TelegramSession.py`), defaulting to `/var/lib/telegram/stats_session.session.enc` — that default only exists inside the `backend` container, where `docker-compose.yml` mounts `./secrets` there. `.env` overrides it to the repo-relative `secrets/stats_session.session.enc` so a natively-run backend can decrypt it; `.env-docker` leaves the default alone since the container still gets the volume mount.
+
 **3. Run the frontend dev server**, from `frontend/`:
 
 ```bash
