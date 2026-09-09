@@ -1,8 +1,6 @@
 import logging
 from functools import reduce
 
-from sqlalchemy import delete
-
 from aitools.tags import TagsExtractor
 from aitools.title import TitleExtractor
 from storage_client.models import PostMetric, Post, PostTags, PostHeader
@@ -58,11 +56,11 @@ class PostsStatsDatabaseSaver:
         posts_to_add = list(filter(lambda post: post.id not in ids_to_remove, self.records_posts))
         posts_to_update = list(filter(lambda post: post.id in posts_in_db and posts_in_db[post.id] != post.text, self.records_posts))
 
-        self.session.execute(
-            delete(Post)
-            .where(Post.id.in_(map(lambda p: p.id, posts_to_update)))
-        )
-        self.session.add_all(posts_to_add + posts_to_update)
+        if posts_to_update:
+            self.session.bulk_update_mappings(
+                Post, [{"id": post.id, "text": post.text} for post in posts_to_update]
+            )
+        self.session.add_all(posts_to_add)
         logger.info(f"✅ Posts exported to database - {len(posts_to_add)} posts saved")
         logger.info(f"✅ Posts exported to database - {len(posts_to_update)} posts updated")
 
