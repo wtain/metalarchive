@@ -51,6 +51,7 @@ def get_post_diffs(session, old_run_id, new_run_id):
             p1.comments.label("comments_old"),
             p2.comments.label("comments_new"),
             comments_diff_column,
+            p1.post_id.is_(None).label("is_new"),
         )
         .outerjoin(
             p1,
@@ -69,7 +70,8 @@ def get_post_diffs(session, old_run_id, new_run_id):
             or_(
                 views_diff_column > 0,
                 reactions_diff_column > 0,
-                comments_diff_column > 0
+                comments_diff_column > 0,
+                p1.post_id.is_(None)
             )
         ).order_by(
             post.id.desc(),
@@ -203,10 +205,10 @@ def show_diff(latest_run_id, reference_run_id, session):
     diff = get_post_diffs(session, reference_run_id, latest_run_id)
     # print(diff)
     for row in diff:
-        post_text, post_id, views_old, views_new, views_diff, reactions_old, reactions_new, reactions_diff, comments_old, comments_new, comments_diff = row
-        if views_diff == 0 and reactions_diff == 0 and comments_diff == 0:
+        post_text, post_id, views_old, views_new, views_diff, reactions_old, reactions_new, reactions_diff, comments_old, comments_new, comments_diff, is_new = row
+        if views_diff == 0 and reactions_diff == 0 and comments_diff == 0 and not is_new:
             continue
-        logger.info(f"Post {post_id}")
+        logger.info(f"Post {post_id}" + (" [NEW]" if is_new else ""))
         if views_diff > 0:
             logger.info(f"- Views: {views_old} -> {views_new} (+{views_diff})")
         if reactions_diff > 0:

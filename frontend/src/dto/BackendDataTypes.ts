@@ -38,6 +38,7 @@ export interface PostChange extends Post {
       comments_old?: number;
       comments_new?: number;
       comments_diff?: number;
+      is_new?: boolean;
 }
 
 export interface Digest {

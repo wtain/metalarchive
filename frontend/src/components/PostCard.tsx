@@ -34,9 +34,10 @@ export default function PostCard({ post, client }: PostCardProps ) {
   }, []);
 
     return (
-        <Card className="shadow-md hover:shadow-lg transition">
+        <Card className={`shadow-md hover:shadow-lg transition ${post.is_new ? "bg-green-50 border-green-400" : ""}`}>
           <CardHeader>
             <CardTitle>
+              {post.is_new && <span className="mr-2">🆕✨ NEW</span>}
               {post.post_id}. <EditableTitle postId={post.post_id} initialTitle={title} client={client} />
             </CardTitle>
           </CardHeader>

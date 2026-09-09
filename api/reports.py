@@ -59,10 +59,10 @@ def get_digest(
 
     def convert_row(row):
         (post_text, post_id, views_old, views_new, views_diff, reactions_old, reactions_new, reactions_diff, comments_old,
-         comments_new, comments_diff) = row
+         comments_new, comments_diff, is_new) = row
         return {"text": post_text, "post_id": post_id, "views_old": views_old, "views_new": views_new, "views_diff": views_diff,
                 "reactions_old": reactions_old, "reactions_new": reactions_new, "reactions_diff": reactions_diff,
-                "comments_old": comments_old,"comments_new": comments_new, "comments_diff": comments_diff}
+                "comments_old": comments_old,"comments_new": comments_new, "comments_diff": comments_diff, "is_new": is_new}
 
     # todo: move conversion to the function itself
     posts_diff = list(map(convert_row, diff))
