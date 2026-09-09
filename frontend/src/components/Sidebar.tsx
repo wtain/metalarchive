@@ -25,6 +25,9 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
         <Link to="/subscribers" className="block hover:bg-gray-700 rounded px-3 py-2" onClick={onClose}>
           Subscribers
         </Link>
+        <Link to="/subscriber-changes" className="block hover:bg-gray-700 rounded px-3 py-2" onClick={onClose}>
+          Subscriber Changes
+        </Link>
         <Link to="/reactions" className="block hover:bg-gray-700 rounded px-3 py-2" onClick={onClose}>
           Reactions
         </Link>

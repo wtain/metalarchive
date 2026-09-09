@@ -7,6 +7,7 @@ import ReactionsPage from "./pages/ReactionsPage";
 import PostDetailsPage from "./pages/PostDetailsPage";
 import PostListPage from "./pages/PostListPage";
 import TopPostsPage from "./pages/TopPostsPage";
+import SubscriberChangesPage from "./pages/SubscriberChangesPage";
 import "./index.css";
 import { SMMetricsClient } from "./client/SMMetricsClient";
 
@@ -19,6 +20,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           <Route path="/" element={<App />}>
             <Route path="reactions" element={<ReactionsPage metricsClient={client} />} />
             <Route index path="subscribers" element={<SubscribersPage metricsClient={client} />} />
+            <Route path="subscriber-changes" element={<SubscriberChangesPage metricsClient={client} />} />
             <Route path="posts" element={<PostListPage metricsClient={client} />} />
             <Route path="top" element={<TopPostsPage metricsClient={client} />} />
             <Route path="posts/:id" element={<PostDetailsPage metricsClient={client} />} />

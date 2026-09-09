@@ -1,6 +1,6 @@
 
 import { ChartDataPoint } from "@/components/ChartCard";
-import { Digest, Post, PostMetricsDataPoint, TagData } from "@/dto/BackendDataTypes";
+import { Digest, Post, PostMetricsDataPoint, SubscriberChanges, TagData } from "@/dto/BackendDataTypes";
 import axios from "axios";
 
 const HEADERS = {
@@ -51,6 +51,12 @@ export class SMMetricsClient {
       const result = await axios
         .get<{ data: ChartDataPoint[] }>(`${this.baseUrl}/api/subscribers/count-over-time?period=${period}`, CONFIG);
         return result.data.data;
+    }
+
+    async getSubscriberChanges(period: string): Promise<SubscriberChanges> {
+      const result = await axios
+        .get<{ data: SubscriberChanges }>(`${this.baseUrl}/api/subscribers/changes?period=${period}`, CONFIG);
+        return result.data;
     }
 
     async getTopPosts(): Promise<Post[]> {

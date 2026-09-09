@@ -1,4 +1,6 @@
 
+from collections import defaultdict
+
 import pandas as pd
 from datetime import datetime
 
@@ -94,3 +96,75 @@ def subscribers_count_over_time(period, session):
         )
 
     return list(map(lambda record: { "timestamp": record[0], "count": record[1] }, q.all()))
+
+
+# Walks every consecutive batch run in [start, end] and records each subscriber
+# appearing/disappearing between two snapshots as a join/leave event, using the
+# later run's timestamp as the (approximate, +-poll interval) event time. This
+# catches churn (join and leave within the same period) that a start/end
+# endpoint diff would miss.
+def get_subscriber_changes(session, start, end):
+    seed_run = (
+        session.query(BatchRun.id)
+        .filter(BatchRun.timestamp <= start)
+        .order_by(BatchRun.timestamp.desc())
+        .first()
+    )
+
+    runs_query = session.query(BatchRun.id, BatchRun.timestamp).filter(BatchRun.timestamp <= end)
+    if seed_run is not None:
+        runs_query = runs_query.filter(BatchRun.id >= seed_run.id)
+    runs = runs_query.order_by(BatchRun.id).all()
+
+    if len(runs) < 2:
+        return {"new": [], "removed": []}
+
+    run_ids = [run.id for run in runs]
+    run_timestamp = {run.id: run.timestamp for run in runs}
+
+    rows = (
+        session.query(
+            Subscriber.run_id,
+            Subscriber.user_id,
+            Subscriber.username,
+            Subscriber.first_name,
+            Subscriber.last_name,
+        )
+        .filter(Subscriber.run_id.in_(run_ids))
+        .all()
+    )
+
+    by_run = defaultdict(dict)
+    for run_id, user_id, username, first_name, last_name in rows:
+        by_run[run_id][user_id] = (username, first_name, last_name)
+
+    def to_event(user_id, details, timestamp):
+        username, first_name, last_name = details
+        return {
+            "user_id": user_id,
+            "username": username,
+            "first_name": first_name,
+            "last_name": last_name,
+            "timestamp": timestamp,
+        }
+
+    new_events = []
+    removed_events = []
+    previous_users = by_run.get(run_ids[0], {})
+
+    for run_id in run_ids[1:]:
+        current_users = by_run.get(run_id, {})
+        timestamp = run_timestamp[run_id]
+
+        for user_id in current_users.keys() - previous_users.keys():
+            new_events.append(to_event(user_id, current_users[user_id], timestamp))
+
+        for user_id in previous_users.keys() - current_users.keys():
+            removed_events.append(to_event(user_id, previous_users[user_id], timestamp))
+
+        previous_users = current_users
+
+    new_events.sort(key=lambda e: e["timestamp"], reverse=True)
+    removed_events.sort(key=lambda e: e["timestamp"], reverse=True)
+
+    return {"new": new_events, "removed": removed_events}

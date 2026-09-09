@@ -1,5 +1,10 @@
 
 export interface Subscriber {
+    user_id: number;
+    username?: string;
+    first_name?: string;
+    last_name?: string;
+    timestamp: string;
 }
 
 export interface SubscriberChanges {
