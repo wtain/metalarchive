@@ -44,25 +44,25 @@ export default function PostCard({ post, client }: PostCardProps ) {
           <CardContent>
             <EditableTagList postId={post.post_id} initialTags={tags} client={client} />
             <p className="text-sm text-black-500 mb-2">{post.text.substring(0, 200)}...</p>
-            { 
-              post.views_new != null &&
+            {
+              (post.views_new ?? post.views) != null &&
                 <div>
                   <p className="text-sm font-bold text-gray-500 mb-2">Views</p>
-                  <MetricDisplay value={post.views_new} valueDiff={post.views_diff} />
-                </div>
-            }            
-            {
-              post.reactions_new != null &&
-                <div>
-                  <p className="text-sm font-bold text-gray-500 mb-2">Reactions</p>
-                  <MetricDisplay value={post.reactions_new} valueDiff={post.reactions_diff} />      
+                  <MetricDisplay value={post.views_new ?? post.views ?? 0} valueDiff={post.views_diff ?? 0} />
                 </div>
             }
             {
-              post.comments_new != null &&
+              (post.reactions_new ?? post.reactions) != null &&
+                <div>
+                  <p className="text-sm font-bold text-gray-500 mb-2">Reactions</p>
+                  <MetricDisplay value={post.reactions_new ?? post.reactions ?? 0} valueDiff={post.reactions_diff ?? 0} />
+                </div>
+            }
+            {
+              (post.comments_new ?? post.comments) != null &&
                 <div>
                   <p className="text-sm font-bold text-gray-500 mb-2">Comments</p>
-                  <MetricDisplay value={post.comments_new} valueDiff={post.comments_diff} />
+                  <MetricDisplay value={post.comments_new ?? post.comments ?? 0} valueDiff={post.comments_diff ?? 0} />
                 </div>
             }
             <Button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white" onClick={

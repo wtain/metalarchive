@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends
-from sqlalchemy import update
+from sqlalchemy import update, func, and_
 from sqlalchemy.orm import Session, aliased
 
 from db.session import get_db
@@ -51,8 +51,12 @@ def update_post_header(
 def get_all_posts(
     db: Session = Depends(get_db)
 ):
+    latest_run_id = db.query(func.max(BatchRun.id)).scalar()
+
+    pm = aliased(PostMetric)
     query = (
-        db.query(Post.id.label("post_id"), Post.text)
+        db.query(Post.id.label("post_id"), Post.text, pm.views, pm.reactions, pm.comments)
+        .outerjoin(pm, and_(pm.post_id == Post.id, pm.run_id == latest_run_id))
         .filter(Post.text.isnot(None))
         .order_by(Post.id.desc())
     )

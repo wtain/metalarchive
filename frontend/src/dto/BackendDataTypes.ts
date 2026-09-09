@@ -15,6 +15,9 @@ export interface SubscriberChanges {
 export interface Post {
     text: string;
     post_id: number;
+    views?: number;
+    reactions?: number;
+    comments?: number;
 }
 
 export interface PostMetricsDataPoint {
