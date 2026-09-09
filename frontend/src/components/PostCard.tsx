@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import EditableTitle from "../components/EditableTitle"
 import EditableTagList from "../components/EditableTagList"
 import MetricDisplay from "../components/MetricDisplay"
+import PostText from "../components/PostText"
 import { PostChange, TagData } from "../dto/BackendDataTypes";
 import { useNavigate } from "react-router-dom";
 import { SMMetricsClient } from "@/client/SMMetricsClient";
@@ -43,7 +44,9 @@ export default function PostCard({ post, client }: PostCardProps ) {
           </CardHeader>
           <CardContent>
             <EditableTagList postId={post.post_id} initialTags={tags} client={client} />
-            <p className="text-sm text-black-500 mb-2">{post.text.substring(0, 200)}...</p>
+            <div className="text-sm text-black-500 mb-2">
+              <PostText text={post.text} maxLength={200} />
+            </div>
             {
               (post.views_new ?? post.views) != null &&
                 <div>
