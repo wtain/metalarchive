@@ -1,12 +1,12 @@
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Button } from "@/components/ui/button"
 import EditableTitle from "../components/EditableTitle"
 import EditableTagList from "../components/EditableTagList"
 import MetricDisplay from "../components/MetricDisplay"
 import PostText from "../components/PostText"
-import { PostChange, TagData } from "../dto/BackendDataTypes";
+import { PostChange } from "../dto/BackendDataTypes";
 import { useNavigate } from "react-router-dom";
 import { SMMetricsClient } from "@/client/SMMetricsClient";
 
@@ -19,31 +19,16 @@ export default function PostCard({ post, client }: PostCardProps ) {
 
     const navigate = useNavigate();
 
-    const [title, setTitle] = useState<string>("???");
-    const [tags, setTags] = useState<TagData[]>([]);
-
-    useEffect(() => {
-      client
-        .getPostTitle(post.post_id)
-        .then((title) => setTitle(title));
-    }, []);
-
-    useEffect(() => {
-      client
-        .getPostTags(post.post_id)
-        .then((tags) => setTags(tags));
-  }, []);
-
     return (
         <Card className={`shadow-md hover:shadow-lg transition ${post.is_new ? "bg-green-50 border-green-400" : ""}`}>
           <CardHeader>
             <CardTitle>
               {post.is_new && <span className="mr-2">🆕✨ NEW</span>}
-              {post.post_id}. <EditableTitle postId={post.post_id} initialTitle={title} client={client} />
+              {post.post_id}. <EditableTitle postId={post.post_id} initialTitle={post.title ?? "???"} client={client} />
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <EditableTagList postId={post.post_id} initialTags={tags} client={client} />
+            <EditableTagList postId={post.post_id} initialTags={post.tags ?? []} client={client} />
             <div className="text-sm text-black-500 mb-2">
               <PostText text={post.text} maxLength={200} />
             </div>

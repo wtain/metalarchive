@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session, aliased
 
 from db.session import get_db
 from storage_client.models import Post, PostMetric, BatchRun, PostTags, PostHeader
+from storage_client.posts import hydrate_posts
 
 router = APIRouter()
 
@@ -60,7 +61,7 @@ def get_all_posts(
         .filter(Post.text.isnot(None))
         .order_by(Post.id.desc())
     )
-    return convert_data_to_json(query)
+    return hydrate_posts(db, convert_data_to_json(query))
 
 
 @router.get("/metrics")

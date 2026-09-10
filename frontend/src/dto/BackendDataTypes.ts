@@ -12,24 +12,26 @@ export interface SubscriberChanges {
     removed: Subscriber[];
 }
 
+export interface TagData {
+    id: number;
+    name: string;
+    probability?: number;
+}
+
 export interface Post {
     text: string;
     post_id: number;
     views?: number;
     reactions?: number;
     comments?: number;
+    title?: string;
+    tags?: TagData[];
 }
 
 export interface PostMetricsDataPoint {
     timestamp: string;
     views: number;
  }
-
-export interface TagData {
-    id: number;
-    name: string;
-    probability?: number;
-}
 
 export interface PostChange extends Post {
       views_old?: number;

@@ -65,18 +65,6 @@ export class SMMetricsClient {
         return result.data;
     }
 
-    async getPostTitle(id: number): Promise<string> {
-        const result = await axios
-            .get<{ data: string }>(`${this.baseUrl}/api/posts/post_header?post_id=${id}`, CONFIG);
-        return result.data;
-    }
-
-    async getPostTags(id: number): Promise<TagData[]> {
-        const result = await axios
-            .get<{ data: TagData[] }>(`${this.baseUrl}/api/posts/post_tags?post_id=${id}`, CONFIG);
-        return result.data;
-    }
-
     async updatePostTitle(postId: number, newTitle: string) {
         await axios.post(`${this.baseUrl}/api/posts/post_header?post_id=${postId}&title=${newTitle}`, CONFIG);
     }

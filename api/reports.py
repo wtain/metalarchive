@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session, aliased
 from daily_digest import get_last_run, get_subscribers_diffs, get_post_diffs
 from db.session import get_db
 from storage_client.models import Post, PostMetric, BatchRun
+from storage_client.posts import hydrate_posts
 
 
 logger = logging.getLogger("uvicorn.info")
@@ -65,7 +66,7 @@ def get_digest(
                 "comments_old": comments_old,"comments_new": comments_new, "comments_diff": comments_diff, "is_new": is_new}
 
     # todo: move conversion to the function itself
-    posts_diff = list(map(convert_row, diff))
+    posts_diff = hydrate_posts(db, list(map(convert_row, diff)))
     subscribers_diff = get_subscribers_diffs(db, reference_run_id, latest_run_id)
 
     views_total = sum(map(lambda diff: diff["views_diff"], posts_diff))
@@ -101,5 +102,6 @@ def get_top_posts(
     ).join(post_metric, post.id == post_metric.post_id
     ).filter(post_metric.run_id == last_run_id).order_by(post_metric.views.desc()).limit(count).all()
 
-    return list(map(lambda row: { "post_id": row[0], "text": row[1], "views": row[2], "reactions": row[3], "comments": row[4] }, data))
+    posts = list(map(lambda row: { "post_id": row[0], "text": row[1], "views": row[2], "reactions": row[3], "comments": row[4] }, data))
+    return hydrate_posts(db, posts)
 

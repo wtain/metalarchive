@@ -19,3 +19,7 @@ run-all: build
 
 freeze:
 	pip freeze > requirements.txt
+
+
+test:
+	pytest tests/
