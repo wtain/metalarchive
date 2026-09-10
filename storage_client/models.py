@@ -19,7 +19,7 @@ class BatchRun(Base):
     __tablename__ = "batch_runs"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    timestamp = Column(DateTime, default=datetime.utcnow, nullable=False)
+    timestamp = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
 
     # relationships
     posts = relationship("PostMetric", back_populates="batch_run")
@@ -63,7 +63,7 @@ class PostMetric(Base):
     reactions = Column(Integer, default=0)
     comments = Column(Integer, default=0)
 
-    run_id = Column(Integer, ForeignKey("batch_runs.id"), nullable=False)
+    run_id = Column(Integer, ForeignKey("batch_runs.id"), nullable=False, index=True)
 
     batch_run = relationship("BatchRun", back_populates="posts")
     post = relationship("Post")
@@ -79,7 +79,7 @@ class Subscriber(Base):
     # todo: remove
     timestamp = Column(DateTime, default=datetime.utcnow, index=True)
 
-    run_id = Column(Integer, ForeignKey("batch_runs.id"), nullable=False)
+    run_id = Column(Integer, ForeignKey("batch_runs.id"), nullable=False, index=True)
 
     batch_run = relationship("BatchRun", back_populates="subscribers")
 
