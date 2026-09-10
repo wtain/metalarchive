@@ -48,8 +48,6 @@ class PostsStatsDatabaseSaver:
         # ).where(PostMetric.run_id == latest_run_id).all()
         # print(previous_values)
 
-        self.session.add_all(self.records_stats)
-
         posts_in_db = reduce(lambda d, v: {**d, v[0]: v[1]}, map(lambda v: (v[0], v[1]), self.session.query(Post.id, Post.text).all()), {})
 
         ids_to_remove = posts_in_db.keys()
@@ -60,7 +58,11 @@ class PostsStatsDatabaseSaver:
             self.session.bulk_update_mappings(
                 Post, [{"id": post.id, "text": post.text} for post in posts_to_update]
             )
+        # New Post rows must be added (and flushed) before PostMetric rows that
+        # reference them via post_id, or the FK insert order breaks on flush.
         self.session.add_all(posts_to_add)
+        self.session.flush()
+        self.session.add_all(self.records_stats)
         logger.info(f"✅ Posts exported to database - {len(posts_to_add)} posts saved")
         logger.info(f"✅ Posts exported to database - {len(posts_to_update)} posts updated")
 
