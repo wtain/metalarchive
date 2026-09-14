@@ -46,6 +46,15 @@ export interface PostChange extends Post {
       is_new?: boolean;
 }
 
+export interface SimilarPost extends Post {
+    similarity: number;
+}
+
+export interface SimilarPosts {
+    available: boolean;
+    posts: SimilarPost[];
+}
+
 export interface Digest {
     period: string;
     subscribers: SubscriberChanges;

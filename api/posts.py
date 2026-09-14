@@ -3,7 +3,7 @@ from sqlalchemy import update, func, and_
 from sqlalchemy.orm import Session, aliased
 
 from db.session import get_db
-from storage_client.models import Post, PostMetric, BatchRun, PostTags, PostHeader
+from storage_client.models import Post, PostMetric, BatchRun, PostTags, PostHeader, PostEmbedding
 from storage_client.posts import hydrate_posts
 
 router = APIRouter()
@@ -62,6 +62,34 @@ def get_all_posts(
         .order_by(Post.id.desc())
     )
     return hydrate_posts(db, convert_data_to_json(query))
+
+
+@router.get("/similar")
+def get_similar_posts(
+    post_id: int,
+    limit: int = 5,
+    db: Session = Depends(get_db)
+):
+    target = db.query(PostEmbedding.embedding).filter(PostEmbedding.post_id == post_id).scalar()
+    if target is None:
+        return {"available": False, "posts": []}
+
+    other = aliased(PostEmbedding)
+    distance = other.embedding.cosine_distance(target).label("distance")
+    rows = (
+        db.query(Post.id.label("post_id"), Post.text, distance)
+        .join(other, other.post_id == Post.id)
+        .filter(other.post_id != post_id)
+        .order_by(distance)
+        .limit(limit)
+        .all()
+    )
+
+    posts = [
+        {"post_id": row.post_id, "text": row.text, "similarity": 1 - row.distance}
+        for row in rows
+    ]
+    return {"available": True, "posts": hydrate_posts(db, posts)}
 
 
 @router.get("/metrics")

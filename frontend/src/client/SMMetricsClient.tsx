@@ -1,6 +1,6 @@
 
 import { ChartDataPoint } from "@/components/ChartCard";
-import { Digest, Post, PostMetricsDataPoint, SubscriberChanges, TagData } from "@/dto/BackendDataTypes";
+import { Digest, Post, PostMetricsDataPoint, SimilarPosts, SubscriberChanges, TagData } from "@/dto/BackendDataTypes";
 import axios from "axios";
 
 const HEADERS = {
@@ -62,6 +62,12 @@ export class SMMetricsClient {
     async getTopPosts(): Promise<Post[]> {
         const result = await axios
           .get<{ data: Post[] }>(`${this.baseUrl}/api/reports/top`, CONFIG);
+        return result.data;
+    }
+
+    async getSimilarPosts(postId: number, limit: number = 5): Promise<SimilarPosts> {
+        const result = await axios
+            .get<{ data: SimilarPosts }>(`${this.baseUrl}/api/posts/similar?post_id=${postId}&limit=${limit}`, CONFIG);
         return result.data;
     }
 
