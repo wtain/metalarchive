@@ -1,3 +1,15 @@
+import os
+
+# Must be set before any transformers/sentence-transformers/tokenizers import
+# (aitools/*) - the tokenizers Rust thread pool can deadlock when the parent
+# process later spawns threads (e.g. FastAPI's run_in_threadpool) otherwise.
+os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
+# Bounds the "is the cached model up to date" HTTP check huggingface_hub does
+# on every load - a flaky/slow network otherwise stalls model loading (and
+# with it, scraping new posts) far past the point of just using the cache.
+# Only affects that check, not genuine downloads of an uncached model.
+os.environ.setdefault("HF_HUB_ETAG_TIMEOUT", "3")
+
 import logging
 import logging.config
 from logging_config import LOGGING_CONFIG

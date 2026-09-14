@@ -46,7 +46,7 @@ curl -X POST http://127.0.0.1:8001/api/updater/update_titles
 curl http://127.0.0.1:8001/metrics   # Prometheus metrics
 ```
 
-There is no test suite in this repo yet (see `docs/plans.txt` "Technical debt" — tests are a known gap). There is no linter configured for either backend or frontend.
+Backend tests: `make test` runs the fast suite (pytest, against a throwaway Postgres schema per test — needs `docker-compose up -d db` running). `make test-integration` additionally runs tests marked `integration` (currently just the real embeddings model, `tests/test_embeddings.py`) that need a working network path to huggingface.co and are excluded from `make test` for that reason. There is no frontend test suite yet, and no linter configured for either backend or frontend.
 
 ## Architecture
 
@@ -55,7 +55,7 @@ There is no test suite in this repo yet (see `docs/plans.txt` "Technical debt" �
 2. `telegram/TelegramSession.py` decrypts the Telethon session file (Fernet, key from `ENCRYPTION_KEY`) from `/var/lib/telegram/stats_session.session.enc` into a temp file, used for the duration of the poll, then deletes it.
 3. `telegram/telegram_client.py::TelegramTelethonClient` wraps Telethon to list channel messages, participants, and comment counts/threads (via raw `GetRepliesRequest`).
 4. `storage_client/DatabaseSession.py` opens a `BatchRun` row (one per poll) and hands out `PostsStatsDatabaseSaver` / `SubscribersDatabaseSaver` (`database_saver/`) which buffer rows and flush them to Postgres on `__exit__`.
-5. On new posts, `database_saver/posts.py` also runs AI extraction inline: `aitools/tags.py` (KeyBERT + multilingual sentence-transformer) and `aitools/title.py` (`cointegrated/rut5-base-multitask` seq2seq model, Russian headline generation) — these load ML models lazily on first use and are slow on cold start.
+5. On new posts, `database_saver/posts.py` also runs AI extraction inline: `aitools/tags.py` (KeyBERT + multilingual sentence-transformer), `aitools/title.py` (`cointegrated/rut5-base-multitask` seq2seq model, Russian headline generation), and `aitools/embeddings.py` (same multilingual sentence-transformer model as tags, stored in `posts_embeddings.embedding` via pgvector — for a future "similar posts" feature, not yet built) — these load ML models lazily on first use and are slow on cold start. Each can also be recomputed for all posts via `/api/updater/update_tags`, `/update_titles`, `/update_embeddings`.
 
 **Storage layer (`storage_client/`):**
 - `models.py` — SQLAlchemy ORM models: `BatchRun` (one per scrape), `Post`/`PostHeader`/`PostTags` (content + AI-derived title/tags), `PostMetric` (per-batch views/reactions/comments time series, FK to both `Post` and `BatchRun`), `Subscriber` (per-batch subscriber snapshot, FK to `BatchRun`).
@@ -78,11 +78,11 @@ Routes generally take a raw `Session` and hand-build SQLAlchemy queries (aliased
 
 **Observability**: `logging_config.py` defines the shared logging config (used by both uvicorn/gunicorn and `logging.config.dictConfig` in `backend.py`); most modules log to the `uvicorn.info` logger for that reason. `metrics/middleware.py` is a Starlette middleware exporting Prometheus counters/histograms (`http_requests_total`, `http_response_time`) scraped by the `prometheus` docker-compose service and visualized in `grafana`.
 
-**Migrations**: Alembic (`alembic/`) targets `storage_client.models.Base.metadata` and reads `DATABASE_URL` (async engine, `alembic/env.py`) — note this differs from the sync engine most of the app uses. Only one baseline migration exists so far (`617d84857b66_baseline.py`); schema is otherwise young and still shifting (see `docs/plans.txt` "Data management").
+**Migrations**: Alembic (`alembic/`) targets `storage_client.models.Base.metadata` and reads `DATABASE_URL` (async engine, `alembic/env.py`) — note this differs from the sync engine most of the app uses. Schema is still young and shifting (see `docs/plans.txt` "Data management"); `posts_embeddings.embedding` uses the `vector` type from the `pgvector` Postgres extension (enabled by a migration, not manually).
 
 ## Known rough edges (see `docs/plans.txt` for the full running list)
 
-- No tests, no linter, in either backend or frontend.
+- No frontend tests, no linter, in either backend or frontend. Backend has a growing pytest suite (`make test`) — see Commands above.
 - Two DB engines/URLs (`DATABASE_URL` vs `SYNC_DATABASE_URL`) must be kept in sync manually when changing connection settings.
 - Concurrency: the 15-min scheduled update and a manually-triggered `/api/updater/update` can race; there's no lock around batch runs.
 - DTOs are not unified between backend (loosely-typed dict/tuple conversions) and frontend (`BackendDataTypes.ts`) — check both sides when changing a response shape.

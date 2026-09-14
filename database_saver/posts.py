@@ -1,9 +1,10 @@
 import logging
 from functools import reduce
 
+from aitools.embeddings import EmbeddingsExtractor, MODEL_NAME as EMBEDDING_MODEL_NAME
 from aitools.tags import TagsExtractor
 from aitools.title import TitleExtractor
-from storage_client.models import PostMetric, Post, PostTags, PostHeader
+from storage_client.models import PostMetric, Post, PostTags, PostHeader, PostEmbedding
 from storage_client.posts import count_reactions
 
 
@@ -69,6 +70,7 @@ class PostsStatsDatabaseSaver:
         logger.info("Analysing new posts")
         title_extractor = TitleExtractor()
         tags_extractor = TagsExtractor()
+        embeddings_extractor = EmbeddingsExtractor()
         for post in posts_to_add:
             post_id = post.id
             text = post.text
@@ -76,6 +78,8 @@ class PostsStatsDatabaseSaver:
             logger.info(f"Extracted tags: {tags}")
             title = title_extractor.get_title(text)
             logger.info(f"Extracted title: {title}")
+            embedding = embeddings_extractor.get_embedding(text)
             for name, probability in tags:
                 self.session.add(PostTags(post_id=post_id, name=name, probability=probability))
             self.session.add(PostHeader(post_id=post_id, title=title))
+            self.session.add(PostEmbedding(post_id=post_id, model_name=EMBEDDING_MODEL_NAME, embedding=embedding))

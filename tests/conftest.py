@@ -3,6 +3,12 @@ import uuid
 
 os.environ.setdefault("LOG_PATH", "/tmp/metalarchive-test-logs")
 os.environ.setdefault("CORS_ALLOW_ORIGINS", "http://localhost")
+# Must be set before any transformers/sentence-transformers/tokenizers import -
+# the tokenizers Rust thread pool can deadlock under pytest otherwise.
+os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
+# Bounds the model-update-check network call so test runs can't hang on a
+# flaky connection to huggingface.co - see the matching comment in backend.py.
+os.environ.setdefault("HF_HUB_ETAG_TIMEOUT", "3")
 
 import pytest
 from fastapi.testclient import TestClient
@@ -31,11 +37,17 @@ def _require_test_database():
 @pytest.fixture()
 def db_session(monkeypatch):
     schema = f"test_{uuid.uuid4().hex[:8]}"
-    engine = create_engine(DATABASE_URL, connect_args={"options": f"-csearch_path={schema}"})
+    # public stays in the search_path so extension-provided types (e.g. pgvector's
+    # "vector", installed in public) resolve; app tables still go to the schema first.
+    engine = create_engine(DATABASE_URL, connect_args={"options": f"-csearch_path={schema},public"})
 
     with engine.begin() as conn:
         conn.execute(text(f"CREATE SCHEMA {schema}"))
-    Base.metadata.create_all(engine)
+    # checkfirst=False: with public in the search_path (needed for pgvector's
+    # "vector" type to resolve), the default checkfirst existence check finds
+    # the real app tables already in public and wrongly skips creating fresh
+    # ones in the test schema, so tests would silently hit production data.
+    Base.metadata.create_all(engine, checkfirst=False)
 
     TestSessionLocal = sessionmaker(bind=engine)
     # get_last_run() in daily_digest.py opens its own session via the module-level

@@ -1,7 +1,9 @@
 import pytest
 
 from database_saver.posts import PostsStatsDatabaseSaver
-from storage_client.models import BatchRun, Post, PostHeader, PostMetric
+from storage_client.models import BatchRun, Post, PostEmbedding, PostHeader, PostMetric
+
+FAKE_EMBEDDING = [0.1] * 384
 
 
 class FakeTagsExtractor:
@@ -14,11 +16,17 @@ class FakeTitleExtractor:
         return "Fake Title"
 
 
+class FakeEmbeddingsExtractor:
+    def get_embedding(self, text):
+        return FAKE_EMBEDDING
+
+
 @pytest.fixture(autouse=True)
 def fake_ai_extractors(monkeypatch):
-    # Avoid loading real KeyBERT/rut5 models (slow, heavy downloads) in tests.
+    # Avoid loading real KeyBERT/rut5/sentence-transformers models (slow, heavy downloads) in tests.
     monkeypatch.setattr("database_saver.posts.TagsExtractor", FakeTagsExtractor)
     monkeypatch.setattr("database_saver.posts.TitleExtractor", FakeTitleExtractor)
+    monkeypatch.setattr("database_saver.posts.EmbeddingsExtractor", FakeEmbeddingsExtractor)
 
 
 def make_batch(db_session):
@@ -38,11 +46,13 @@ def test_new_post_and_metric_save_without_fk_violation(db_session):
     post = db_session.query(Post).filter(Post.id == 1).one()
     metric = db_session.query(PostMetric).filter(PostMetric.post_id == 1).one()
     header = db_session.query(PostHeader).filter(PostHeader.post_id == 1).one()
+    embedding = db_session.query(PostEmbedding).filter(PostEmbedding.post_id == 1).one()
 
     assert post.text == "Brand new post"
     assert metric.views == 10
     assert metric.run_id == batch.id
     assert header.title == "Fake Title"
+    assert list(embedding.embedding) == FAKE_EMBEDDING
 
 
 def test_existing_post_text_update_does_not_touch_header(db_session):

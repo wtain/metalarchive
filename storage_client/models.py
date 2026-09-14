@@ -1,6 +1,7 @@
 import os
 
 from dotenv import load_dotenv
+from pgvector.sqlalchemy import Vector
 from sqlalchemy import create_engine, Column, Integer, String, DateTime, BigInteger, ForeignKey, Double
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 from datetime import datetime
@@ -49,6 +50,16 @@ class PostTags(Base):
     post_id = Column(Integer, ForeignKey("posts.id"), index=True)
     name = Column(String)
     probability = Column(Double)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    post = relationship("Post")
+
+
+class PostEmbedding(Base):
+    __tablename__ = "posts_embeddings"
+    id = Column(Integer, primary_key=True)
+    post_id = Column(Integer, ForeignKey("posts.id"), index=True, unique=True)
+    model_name = Column(String, nullable=False)
+    embedding = Column(Vector(384), nullable=False)  # dimension must match aitools/embeddings.py::EMBEDDING_DIMENSIONS
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     post = relationship("Post")
 

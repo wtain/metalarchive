@@ -5,11 +5,12 @@ from fastapi import APIRouter, Depends
 from sqlalchemy import delete
 from sqlalchemy.orm import Session
 
+from aitools.embeddings import EmbeddingsExtractor, MODEL_NAME as EMBEDDING_MODEL_NAME
 from aitools.tags import TagsExtractor
 from aitools.title import TitleExtractor
 from db.session import get_db
 from environment.secrets import CHANNEL_NAME
-from storage_client.models import Post, PostHeader, PostTags
+from storage_client.models import Post, PostHeader, PostTags, PostEmbedding
 from synchronizer.poller import poll_from_telegram
 
 logger = logging.getLogger("uvicorn.info")
@@ -77,6 +78,29 @@ def update_titles(
         title = title_extractor.get_title(post_text)
         logger.info(title)
         db.add(PostHeader(post_id=post_id, title=title))
+    db.commit()
+
+"""
+curl -X POST http://127.0.0.1:8001/api/updater/update_embeddings
+"""
+@router.post("/update_embeddings")
+def update_embeddings(
+    db: Session = Depends(get_db)
+):
+    posts = (
+        db.query(Post.id.label("post_id"), Post.text)
+        .filter(Post.text.isnot(None))
+        .order_by(Post.id.desc())
+    ).all()
+    embeddings_extractor = EmbeddingsExtractor()
+    db.execute(
+        delete(PostEmbedding)
+    )
+    for post in posts:
+        post_id = post[0]
+        post_text = post[1]
+        embedding = embeddings_extractor.get_embedding(post_text)
+        db.add(PostEmbedding(post_id=post_id, model_name=EMBEDDING_MODEL_NAME, embedding=embedding))
     db.commit()
 
 

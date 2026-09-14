@@ -22,4 +22,8 @@ freeze:
 
 
 test:
-	pytest tests/
+	pytest tests/ -m "not integration"
+
+
+test-integration:
+	pytest tests/ -m integration
