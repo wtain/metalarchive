@@ -13,9 +13,7 @@ from storage_client.models import BatchRun, PostMetric, Subscriber, Post
 logger = logging.getLogger("digest")
 
 
-def get_last_run(day):
-    session = SessionLocal()
-
+def get_last_run(session, day):
     last_run = (
         session.query(
             BatchRun.id,
@@ -174,16 +172,16 @@ def daily_digest():
     yesterday = now - timedelta(days=1)
     week_ago = now - timedelta(days=7)
     month_ago = now - timedelta(days=30)
-    latest_run_id = get_last_run(now)
-    reference_run_id = get_last_run(yesterday)
-    reference_run_id2 = get_last_run(week_ago)
-    reference_run_id3 = get_last_run(month_ago)
+    session = SessionLocal()
+    latest_run_id = get_last_run(session, now)
+    reference_run_id = get_last_run(session, yesterday)
+    reference_run_id2 = get_last_run(session, week_ago)
+    reference_run_id3 = get_last_run(session, month_ago)
     logger.info(f"Latest run id: {latest_run_id}")
     logger.info(f"Yesterday run id: {reference_run_id}")
     logger.info(f"Last week run id: {reference_run_id2}")
     logger.info(f"Last month run id: {reference_run_id3}")
     # print(reference_run_id, latest_run_id)
-    session = SessionLocal()
 
     if reference_run_id:
         show_diff(latest_run_id, reference_run_id, session)

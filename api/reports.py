@@ -39,7 +39,7 @@ def get_digest(
         days = int(period)
     if days:
         reference = now - timedelta(days=days)
-    latest_run_id = get_last_run(now)
+    latest_run_id = get_last_run(db, now)
     if period == "default":
         reference_run_id = (
             db.query(
@@ -48,7 +48,7 @@ def get_digest(
             .filter(BatchRun.id < latest_run_id)
         ).one()[0]
     else:
-        reference_run_id = get_last_run(reference)
+        reference_run_id = get_last_run(db, reference)
 
     if not reference_run_id:
         return "No data"

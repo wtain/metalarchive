@@ -50,9 +50,10 @@ def db_session(monkeypatch):
     Base.metadata.create_all(engine, checkfirst=False)
 
     TestSessionLocal = sessionmaker(bind=engine)
-    # get_last_run() in daily_digest.py opens its own session via the module-level
-    # SessionLocal instead of taking one as a parameter, so it has to be patched
-    # separately from the get_db() override below to actually hit the test schema.
+    # Defensive: some legacy helpers (e.g. the dead daily_digest() script entry
+    # point, storage_client/*'s older SessionLocal()-opening functions) still
+    # open their own session via the module-level SessionLocal instead of
+    # taking one as a parameter, bypassing the get_db() override below.
     monkeypatch.setattr("daily_digest.SessionLocal", TestSessionLocal)
     monkeypatch.setattr("storage_client.db_sync.SessionLocal", TestSessionLocal)
 
