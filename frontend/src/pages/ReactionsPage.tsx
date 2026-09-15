@@ -1,9 +1,14 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import PeriodSelector, { Period } from "../components/PeriodSelector";
 import PostCard from "../components/PostCard";
 import { Digest } from "../dto/BackendDataTypes";
 import { BasePageProperties } from "@/utils/BasePageProperties";
+
+// Full refetch on an interval - real data only changes every ~15min (scheduled
+// scrape) or on a manual trigger, so this is just about not staring at stale
+// numbers, not keeping pace with fast-changing data.
+const REFRESH_INTERVAL_MS = 60_000;
 
 export default function ReactionsPage(props: BasePageProperties) {
   const [period, setPeriod] = useState<Period>("daily");
@@ -11,11 +16,33 @@ export default function ReactionsPage(props: BasePageProperties) {
 
   const client = props.metricsClient;
 
-  useEffect(() => {
+  const fetchDigest = useCallback(() => {
     client
       .getDigest(period)
       .then((digest) => setData(digest));
-  }, [period]);
+  }, [client, period]);
+
+  useEffect(() => {
+    fetchDigest();
+
+    const intervalId = setInterval(() => {
+      if (document.visibilityState === "visible") {
+        fetchDigest();
+      }
+    }, REFRESH_INTERVAL_MS);
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        fetchDigest();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    return () => {
+      clearInterval(intervalId);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+  }, [fetchDigest]);
 
   return (
     <div>
