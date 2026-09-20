@@ -12,6 +12,21 @@ export interface SubscriberChanges {
     removed: Subscriber[];
 }
 
+export interface SubscriberLifecycleEntry {
+    user_id: number;
+    username?: string;
+    first_name?: string;
+    last_name?: string;
+    added: string;
+    removed: string | null;
+    duration_seconds: number;
+}
+
+export interface SubscriberLifecycle {
+    past: SubscriberLifecycleEntry[];
+    current: SubscriberLifecycleEntry[];
+}
+
 export interface TagData {
     id: number;
     name: string;

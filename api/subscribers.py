@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from db.session import get_db
-from storage_client.subscribers import subscribers_count_over_time, get_subscriber_changes
+from storage_client.subscribers import subscribers_count_over_time, get_subscriber_changes, get_subscriber_lifecycles
 
 router = APIRouter()
 
@@ -32,4 +32,11 @@ def get_subscribers_changes(
     start = end - timedelta(days=PERIOD_TO_DAYS.get(period, 1))
     changes = get_subscriber_changes(db, start, end)
     return {"period": period, **changes}
+
+
+@router.get("/lifecycle")
+def get_subscribers_lifecycle(
+    db: Session = Depends(get_db)
+):
+    return get_subscriber_lifecycles(db)
 
