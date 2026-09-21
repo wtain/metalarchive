@@ -44,12 +44,14 @@ def test_user_who_left_appears_in_past_with_duration(db_session):
     make_run(db_session, 3, t2)
     add_presence(db_session, 1, user_id=200)
     add_presence(db_session, 2, user_id=200)
-    # absent from run 3 -> left, detected at t2
+    # absent from run 3 -> left, detected at t2; decoy keeps run 3 non-empty
+    # so it isn't treated as a failed-scrape batch and skipped.
+    add_presence(db_session, 3, user_id=999)
     db_session.commit()
 
     result = get_subscriber_lifecycles(db_session)
 
-    assert result["current"] == []
+    assert [e["user_id"] for e in result["current"]] == [999]
     assert len(result["past"]) == 1
     entry = result["past"][0]
     assert entry["user_id"] == 200
@@ -64,20 +66,46 @@ def test_rejoin_produces_two_separate_stints(db_session):
         make_run(db_session, i, ts)
 
     # present in run 1, absent in run 2 (left), present again in run 3 and 4 (rejoined, still current)
+    # run 2 has a decoy subscriber so it's a real (non-empty) batch, not the
+    # zero-subscriber-batch case covered separately below.
     add_presence(db_session, 1, user_id=300)
+    add_presence(db_session, 2, user_id=999)
     add_presence(db_session, 3, user_id=300)
     add_presence(db_session, 4, user_id=300)
     db_session.commit()
 
     result = get_subscriber_lifecycles(db_session)
+    past_300 = [e for e in result["past"] if e["user_id"] == 300]
+    current_300 = [e for e in result["current"] if e["user_id"] == 300]
 
-    assert len(result["past"]) == 1
-    assert result["past"][0]["added"] == timestamps[0]
-    assert result["past"][0]["removed"] == timestamps[1]
+    assert len(past_300) == 1
+    assert past_300[0]["added"] == timestamps[0]
+    assert past_300[0]["removed"] == timestamps[1]
 
+    assert len(current_300) == 1
+    assert current_300[0]["added"] == timestamps[2]
+    assert current_300[0]["removed"] is None
+
+
+def test_zero_subscriber_batch_is_skipped_not_treated_as_mass_unsubscribe(db_session):
+    # Regression test: a batch run with zero subscriber rows is a failed/
+    # incomplete scrape, not a real "everyone unsubscribed" snapshot. It must
+    # not be read as every subscriber leaving and immediately rejoining.
+    timestamps = [datetime(2026, 1, 1) + timedelta(minutes=15 * i) for i in range(3)]
+    for i, ts in enumerate(timestamps, start=1):
+        make_run(db_session, i, ts)
+
+    add_presence(db_session, 1, user_id=500)
+    # run 2: no subscriber rows at all (the failure mode)
+    add_presence(db_session, 3, user_id=500)
+    db_session.commit()
+
+    result = get_subscriber_lifecycles(db_session)
+
+    assert result["past"] == []
     assert len(result["current"]) == 1
-    assert result["current"][0]["added"] == timestamps[2]
-    assert result["current"][0]["removed"] is None
+    assert result["current"][0]["user_id"] == 500
+    assert result["current"][0]["added"] == timestamps[0]
 
 
 def test_lifecycle_endpoint_returns_hydrated_entries(client, db_session):

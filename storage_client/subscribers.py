@@ -186,7 +186,6 @@ def get_subscriber_lifecycles(session):
 
     run_ids = [run.id for run in runs]
     run_timestamp = {run.id: run.timestamp for run in runs}
-    latest_timestamp = runs[-1].timestamp
 
     # No run_id filter here: run_ids already spans every batch run that exists,
     # so filtering on it would just build a 20k+-value IN clause for no benefit.
@@ -198,6 +197,17 @@ def get_subscriber_lifecycles(session):
         by_run[run_id].add(user_id)
         if run_id > last_seen_run_id.get(user_id, -1):
             last_seen_run_id[user_id] = run_id
+
+    # Some batch runs recorded zero subscribers - a failed/incomplete Telegram
+    # scrape (confirmed: an early period before subscriber tracking worked,
+    # plus isolated later failures), not a real "everyone unsubscribed"
+    # snapshot. Treating them as real would make the walk below see every
+    # subscriber leave and immediately rejoin at the next real batch, wildly
+    # inflating past-subscriber counts. Skip them as if never sampled.
+    run_ids = [run_id for run_id in run_ids if by_run.get(run_id)]
+    if not run_ids:
+        return {"past": [], "current": []}
+    latest_timestamp = run_timestamp[run_ids[-1]]
 
     desired_pairs = {(user_id, run_id) for user_id, run_id in last_seen_run_id.items()}
     latest_details = {}
