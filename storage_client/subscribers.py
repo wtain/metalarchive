@@ -184,6 +184,24 @@ def get_subscriber_lifecycles(session):
     if not runs:
         return {"past": [], "current": []}
 
+    # BatchRun.id ordering is assumed chronological elsewhere in this codebase,
+    # but at least one row has a corrupted timestamp that duplicates an
+    # earlier batch's exactly, breaking that assumption. Walking it in id
+    # order would pair it with the wrong neighbor and produce a nonsensical
+    # (even negative) duration. Drop any run whose timestamp doesn't strictly
+    # increase over everything before it in id order, rather than guess at
+    # its true time.
+    max_timestamp_seen = None
+    monotonic_runs = []
+    for run in runs:
+        if max_timestamp_seen is not None and run.timestamp <= max_timestamp_seen:
+            continue
+        monotonic_runs.append(run)
+        max_timestamp_seen = run.timestamp
+    runs = monotonic_runs
+    if not runs:
+        return {"past": [], "current": []}
+
     run_ids = [run.id for run in runs]
     run_timestamp = {run.id: run.timestamp for run in runs}
 

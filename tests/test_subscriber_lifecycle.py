@@ -108,6 +108,37 @@ def test_zero_subscriber_batch_is_skipped_not_treated_as_mass_unsubscribe(db_ses
     assert result["current"][0]["added"] == timestamps[0]
 
 
+def test_batch_run_with_out_of_order_timestamp_is_skipped(db_session):
+    # Regression test: a batch run whose timestamp doesn't actually come
+    # after earlier runs (id ordering is assumed chronological elsewhere in
+    # this codebase, but isn't guaranteed) must not be walked as if it were
+    # in its id position. User 600 joins for real at t_late (run 2); run 3
+    # has a later id but a corrupted timestamp before t_late, and user 600 is
+    # absent there. Walked in id order, that reads as "removed" at a time
+    # before they joined - a negative duration, matching the real bug found
+    # via @pomidoroshev's entry (added after its own "removed" time).
+    t0 = datetime(2026, 1, 1)
+    t_late = t0 + timedelta(days=30)
+    make_run(db_session, 1, t0)
+    make_run(db_session, 2, t_late)
+    make_run(db_session, 3, t0)
+
+    add_presence(db_session, 1, user_id=999)  # decoy: keeps run 1 non-empty
+    add_presence(db_session, 2, user_id=600)  # user 600 joins for real at t_late
+    add_presence(db_session, 3, user_id=999)  # user 600 absent from run 3
+
+    db_session.commit()
+
+    result = get_subscriber_lifecycles(db_session)
+
+    entries_600 = [e for e in result["past"] + result["current"] if e["user_id"] == 600]
+    assert len(entries_600) == 1
+    entry = entries_600[0]
+    assert entry["added"] == t_late
+    assert entry["removed"] is None
+    assert entry["duration_seconds"] >= 0
+
+
 def test_lifecycle_endpoint_returns_hydrated_entries(client, db_session):
     t0 = datetime(2026, 1, 1)
     make_run(db_session, 1, t0)
