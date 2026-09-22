@@ -11,6 +11,7 @@ from aitools.title import TitleExtractor
 from db.session import get_db
 from environment.secrets import CHANNEL_NAME
 from storage_client.models import Post, PostHeader, PostTags, PostEmbedding
+from storage_client.subscribers import update_subscriber_lifecycle
 from synchronizer.poller import poll_from_telegram
 
 logger = logging.getLogger("uvicorn.info")
@@ -28,6 +29,9 @@ def update_data(
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     result = loop.run_until_complete(poll_from_telegram(db, CHANNEL_NAME))
+    # Subscriber snapshots only change on a real poll, so this is the only
+    # point where the materialized lifecycle data could go stale.
+    update_subscriber_lifecycle(db)
     return result
 
 
@@ -102,5 +106,14 @@ def update_embeddings(
         embedding = embeddings_extractor.get_embedding(post_text)
         db.add(PostEmbedding(post_id=post_id, model_name=EMBEDDING_MODEL_NAME, embedding=embedding))
     db.commit()
+
+"""
+curl -X POST http://127.0.0.1:8001/api/updater/update_subscriber_lifecycle
+"""
+@router.post("/update_subscriber_lifecycle")
+def update_subscriber_lifecycle_endpoint(
+    db: Session = Depends(get_db)
+):
+    update_subscriber_lifecycle(db)
 
 

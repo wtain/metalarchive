@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 
-from storage_client.models import BatchRun, Subscriber
-from storage_client.subscribers import get_subscriber_lifecycles
+from storage_client.models import BatchRun, Subscriber, SubscriberLifecycleStint
+from storage_client.subscribers import get_subscriber_lifecycles, update_subscriber_lifecycle
 
 
 def make_run(db_session, run_id, timestamp):
@@ -139,14 +139,45 @@ def test_batch_run_with_out_of_order_timestamp_is_skipped(db_session):
     assert entry["duration_seconds"] >= 0
 
 
-def test_lifecycle_endpoint_returns_hydrated_entries(client, db_session):
+def test_update_subscriber_lifecycle_persists_and_replaces_stale_rows(db_session):
+    t0 = datetime(2026, 1, 1)
+    make_run(db_session, 1, t0)
+    add_presence(db_session, 1, user_id=400, username="alice", first_name="Alice", last_name="A")
+    db_session.add(SubscriberLifecycleStint(
+        user_id=999999, username="stale", added=t0, removed=t0, duration_seconds=0,
+    ))
+    db_session.commit()
+
+    update_subscriber_lifecycle(db_session)
+
+    rows = db_session.query(SubscriberLifecycleStint).all()
+    assert len(rows) == 1
+    assert rows[0].user_id == 400
+    assert rows[0].username == "alice"
+    assert rows[0].removed is None
+
+
+def test_lifecycle_endpoint_reads_materialized_table(client, db_session):
     t0 = datetime(2026, 1, 1)
     make_run(db_session, 1, t0)
     add_presence(db_session, 1, user_id=400, username="alice", first_name="Alice", last_name="A")
     db_session.commit()
 
+    # GET must not compute live - nothing shows up until the update endpoint
+    # (or the scrape it chains onto) has materialized the table.
+    empty_response = client.get("/api/subscribers/lifecycle")
+    assert empty_response.json() == {"past": [], "current": []}
+
+    update_response = client.post("/api/updater/update_subscriber_lifecycle")
+    assert update_response.status_code == 200
+
     response = client.get("/api/subscribers/lifecycle")
     assert response.status_code == 200
+    data = response.json()
+    assert data["past"] == []
+    assert len(data["current"]) == 1
+    assert data["current"][0]["username"] == "alice"
+    assert data["current"][0]["removed"] is None
 
     data = response.json()
     assert data["past"] == []

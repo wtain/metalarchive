@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from db.session import get_db
-from storage_client.subscribers import subscribers_count_over_time, get_subscriber_changes, get_subscriber_lifecycles
+from storage_client.subscribers import subscribers_count_over_time, get_subscriber_changes, get_materialized_subscriber_lifecycle
 
 router = APIRouter()
 
@@ -38,5 +38,8 @@ def get_subscribers_changes(
 def get_subscribers_lifecycle(
     db: Session = Depends(get_db)
 ):
-    return get_subscriber_lifecycles(db)
+    # Served from subscriber_lifecycle_stints (materialized by
+    # /api/updater/update_subscriber_lifecycle) rather than computed live -
+    # the full-history walk takes several seconds over ~2M snapshot rows.
+    return get_materialized_subscriber_lifecycle(db)
 

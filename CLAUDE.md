@@ -43,6 +43,8 @@ Manually trigger a Telegram scrape / batch update once the backend is running:
 curl -X POST http://127.0.0.1:8001/api/updater/update
 curl -X POST http://127.0.0.1:8001/api/updater/update_tags
 curl -X POST http://127.0.0.1:8001/api/updater/update_titles
+curl -X POST http://127.0.0.1:8001/api/updater/update_embeddings
+curl -X POST http://127.0.0.1:8001/api/updater/update_subscriber_lifecycle
 curl http://127.0.0.1:8001/metrics   # Prometheus metrics
 ```
 
@@ -55,24 +57,25 @@ Backend tests: `make test` runs the fast suite (pytest, against a throwaway Post
 2. `telegram/TelegramSession.py` decrypts the Telethon session file (Fernet, key from `ENCRYPTION_KEY`) from `/var/lib/telegram/stats_session.session.enc` into a temp file, used for the duration of the poll, then deletes it.
 3. `telegram/telegram_client.py::TelegramTelethonClient` wraps Telethon to list channel messages, participants, and comment counts/threads (via raw `GetRepliesRequest`).
 4. `storage_client/DatabaseSession.py` opens a `BatchRun` row (one per poll) and hands out `PostsStatsDatabaseSaver` / `SubscribersDatabaseSaver` (`database_saver/`) which buffer rows and flush them to Postgres on `__exit__`.
-5. On new posts, `database_saver/posts.py` also runs AI extraction inline: `aitools/tags.py` (KeyBERT + multilingual sentence-transformer), `aitools/title.py` (`cointegrated/rut5-base-multitask` seq2seq model, Russian headline generation), and `aitools/embeddings.py` (same multilingual sentence-transformer model as tags, stored in `posts_embeddings.embedding` via pgvector — for a future "similar posts" feature, not yet built) — these load ML models lazily on first use and are slow on cold start. Each can also be recomputed for all posts via `/api/updater/update_tags`, `/update_titles`, `/update_embeddings`.
+5. On new posts, `database_saver/posts.py` also runs AI extraction inline: `aitools/tags.py` (KeyBERT + multilingual sentence-transformer), `aitools/title.py` (`cointegrated/rut5-base-multitask` seq2seq model, Russian headline generation), and `aitools/embeddings.py` (same multilingual sentence-transformer model as tags, stored in `posts_embeddings.embedding` via pgvector, used by `GET /api/posts/similar` for the "similar posts" list on the post details page) — these load ML models lazily on first use and are slow on cold start. Each can also be recomputed for all posts via `/api/updater/update_tags`, `/update_titles`, `/update_embeddings`.
+6. `update_data()` (`/api/updater/update`) also calls `storage_client/subscribers.py::update_subscriber_lifecycle` after every poll, which recomputes each subscriber's join/leave "stints" over the *entire* history (not just this batch — a full walk over every snapshot ever taken, ~2M rows) and materializes them into `subscriber_lifecycle_stints`. `GET /api/subscribers/lifecycle` just reads that table — the full recompute takes several seconds, too slow to run per-request, so it's also independently triggerable via `/api/updater/update_subscriber_lifecycle`.
 
 **Storage layer (`storage_client/`):**
-- `models.py` — SQLAlchemy ORM models: `BatchRun` (one per scrape), `Post`/`PostHeader`/`PostTags` (content + AI-derived title/tags), `PostMetric` (per-batch views/reactions/comments time series, FK to both `Post` and `BatchRun`), `Subscriber` (per-batch subscriber snapshot, FK to `BatchRun`).
+- `models.py` — SQLAlchemy ORM models: `BatchRun` (one per scrape), `Post`/`PostHeader`/`PostTags`/`PostEmbedding` (content + AI-derived title/tags/embedding), `PostMetric` (per-batch views/reactions/comments time series, FK to both `Post` and `BatchRun`), `Subscriber` (per-batch subscriber snapshot, FK to `BatchRun`), `SubscriberLifecycleStint` (materialized join/leave stints, see data flow step 6 above).
 - `db_sync.py` / `db_async.py` — two separate engines/sessionmakers, from `SYNC_DATABASE_URL` and `DATABASE_URL` respectively. Most of the app (FastAPI routes, `database_saver`) uses the **sync** engine; async is set up for alembic migrations. Don't assume they point at the same driver string.
 - `db/session.py` — the FastAPI `Depends(get_db)` dependency, built on the sync `SessionLocal`.
 - Metrics are stored as **per-batch snapshots**, not deltas — "diffs" (daily/weekly/monthly digest, new/removed subscribers) are computed on read by joining a post/subscriber against two different `BatchRun` ids (see `daily_digest.py` and `api/reports.py`). `BatchRun.id` ordering is treated as chronological.
 
 **API (`api/`)**, all mounted under `/api/<name>` in `backend.py`:
-- `updater.py` — triggers scrape (`/update`) and re-runs AI tagging/titling over all stored post text (`/update_tags`, `/update_titles`).
-- `posts.py` — single-post text/tags/header/metrics lookups.
+- `updater.py` — triggers scrape (`/update`) and re-runs AI tagging/titling/embeddings/subscriber-lifecycle over all stored data (`/update_tags`, `/update_titles`, `/update_embeddings`, `/update_subscriber_lifecycle`).
+- `posts.py` — single-post text/tags/header/metrics lookups, plus `/similar` (pgvector nearest-neighbor on `posts_embeddings`).
 - `reports.py` — `/digest` (diff between two batch runs, period-based) and `/top` (top posts by views in the latest batch).
 - `tags.py` — manual add/delete of a post tag.
-- `subscribers.py` — subscriber count over time, bucketed by period.
+- `subscribers.py` — subscriber count over time (`/count-over-time`), period-scoped join/leave events (`/changes`), and `/lifecycle` (reads the materialized `subscriber_lifecycle_stints` table — see data flow step 6 above).
 
 Routes generally take a raw `Session` and hand-build SQLAlchemy queries (aliased joins, `func.coalesce` for diffing) rather than going through a repository layer — expect to write SQL-shaped queries directly in route handlers, and expect DB rows/DTOs to be loosely typed (`api/posts.py::convert_data_to_json` reflects column names off the query itself).
 
-**Frontend (`frontend/`)**: Vite + React + TypeScript + Tailwind + shadcn/ui + recharts, React Router. `SMMetricsClient` (`src/client/SMMetricsClient.tsx`) is the single hand-written API client wrapping axios calls to the backend routes above — add new backend endpoints there and to `src/dto/BackendDataTypes.ts` when wiring up new UI data. Pages live in `src/pages/` (Reactions, Top Posts, Subscribers, Post List/Details). The API base URL is hardcoded to `http://127.0.0.1:8001` in `src/main.tsx`; `public/config.json`'s `apiBaseUrl` looks like runtime config but isn't actually read anywhere yet.
+**Frontend (`frontend/`)**: Vite + React + TypeScript + Tailwind + shadcn/ui + recharts, React Router. `SMMetricsClient` (`src/client/SMMetricsClient.tsx`) is the single hand-written API client wrapping axios calls to the backend routes above — add new backend endpoints there and to `src/dto/BackendDataTypes.ts` when wiring up new UI data. Pages live in `src/pages/` (Reactions, Top Posts, Post List/Details, Subscribers, Subscriber Changes, Subscriber Lifecycle). The API base URL is hardcoded to `http://127.0.0.1:8001` in `src/main.tsx`; `public/config.json`'s `apiBaseUrl` looks like runtime config but isn't actually read anywhere yet.
 
 **Config / secrets**: All config comes from env vars via `python-dotenv` (`environment/secrets.py` for Telegram/encryption secrets; `.env` for local runs, `.env-docker` for docker-compose). `CHANNEL_NAME` is currently a single hardcoded channel — multi-channel/multi-tenant support is not implemented (see `docs/plans.txt`). The Telegram session file must be encrypted at rest; `encryption_script.py` is the helper for producing `secrets/stats_session.session.enc` from a plaintext session.
 

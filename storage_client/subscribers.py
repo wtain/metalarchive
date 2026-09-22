@@ -4,12 +4,12 @@ from collections import defaultdict
 import pandas as pd
 from datetime import datetime
 
-from sqlalchemy import func
+from sqlalchemy import func, delete
 from sqlalchemy.orm import aliased
 
 from storage_client.db_sync import SessionLocal, engine
 # from storage_client.models import SessionLocal, Subscriber, engine, BatchRun
-from storage_client.models import Subscriber, BatchRun
+from storage_client.models import Subscriber, BatchRun, SubscriberLifecycleStint
 from storage_client.utils import coerce_string
 
 
@@ -269,5 +269,51 @@ def get_subscriber_lifecycles(session):
 
     past.sort(key=lambda e: e["removed"], reverse=True)
     current.sort(key=lambda e: e["added"], reverse=True)
+
+    return {"past": past, "current": current}
+
+
+# Recomputes get_subscriber_lifecycles() (a full-history walk over ~2M
+# snapshot rows, several seconds) and persists it to subscriber_lifecycle_stints
+# so the lifecycle page can just read that table instead of recomputing on
+# every visit. Full delete + reinsert, same pattern as update_tags/
+# update_titles/update_embeddings.
+def update_subscriber_lifecycle(session):
+    lifecycles = get_subscriber_lifecycles(session)
+    stints = lifecycles["past"] + lifecycles["current"]
+
+    session.execute(delete(SubscriberLifecycleStint))
+    session.add_all(
+        SubscriberLifecycleStint(
+            user_id=entry["user_id"],
+            username=entry["username"],
+            first_name=entry["first_name"],
+            last_name=entry["last_name"],
+            added=entry["added"],
+            removed=entry["removed"],
+            duration_seconds=entry["duration_seconds"],
+        )
+        for entry in stints
+    )
+    session.commit()
+
+
+def get_materialized_subscriber_lifecycle(session):
+    rows = session.query(SubscriberLifecycleStint).order_by(SubscriberLifecycleStint.added.desc()).all()
+
+    def to_dict(row):
+        return {
+            "user_id": row.user_id,
+            "username": row.username,
+            "first_name": row.first_name,
+            "last_name": row.last_name,
+            "added": row.added,
+            "removed": row.removed,
+            "duration_seconds": row.duration_seconds,
+        }
+
+    past = [to_dict(r) for r in rows if r.removed is not None]
+    current = [to_dict(r) for r in rows if r.removed is None]
+    past.sort(key=lambda e: e["removed"], reverse=True)
 
     return {"past": past, "current": current}

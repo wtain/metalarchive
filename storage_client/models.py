@@ -95,5 +95,18 @@ class Subscriber(Base):
     batch_run = relationship("BatchRun", back_populates="subscribers")
 
 
+class SubscriberLifecycleStint(Base):
+    __tablename__ = "subscriber_lifecycle_stints"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(BigInteger, index=True)
+    username = Column(String, nullable=True)
+    first_name = Column(String, nullable=True)
+    last_name = Column(String, nullable=True)
+    added = Column(DateTime, nullable=False)
+    removed = Column(DateTime, nullable=True)
+    duration_seconds = Column(Double, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+
     # # Create tables
     # Base.metadata.create_all(engine)
