@@ -48,6 +48,14 @@ export default function SubscriberLifecycleDiagram({ entries }: SubscriberLifecy
     chart: {
       type: "rangeBar",
       toolbar: { show: true },
+      // Default ('auto') binds mouse wheel / trackpad scroll to zoom whenever
+      // the toolbar's reset button is present (it is here), which hijacks
+      // page scroll while hovering a chart this tall. Scrolling past it
+      // matters more than wheel-zoom, so turn just that off - drag-select
+      // zoom and the toolbar buttons still work.
+      zoom: {
+        allowMouseWheelZoom: false,
+      },
     },
     plotOptions: {
       bar: {
