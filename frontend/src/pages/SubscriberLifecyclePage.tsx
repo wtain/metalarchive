@@ -1,8 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { SubscriberLifecycle, SubscriberLifecycleEntry } from "../dto/BackendDataTypes";
 import { BasePageProperties } from "@/utils/BasePageProperties";
+import SubscriberLifecycleDiagram from "../components/SubscriberLifecycleDiagram";
 
-function displayName(entry: SubscriberLifecycleEntry): string {
+type ViewMode = "table" | "diagram";
+
+export function displayName(entry: SubscriberLifecycleEntry): string {
   const name = [entry.first_name, entry.last_name].filter(Boolean).join(" ");
   return name || "(unknown)";
 }
@@ -87,6 +90,7 @@ function CurrentSubscribersTable({ rows }: { rows: SubscriberLifecycleEntry[] })
 
 export default function SubscriberLifecyclePage(props: BasePageProperties) {
   const [data, setData] = useState<SubscriberLifecycle | null>(null);
+  const [view, setView] = useState<ViewMode>("table");
 
   const client = props.metricsClient;
 
@@ -99,13 +103,32 @@ export default function SubscriberLifecyclePage(props: BasePageProperties) {
   return (
     <div>
       <h1 className="text-2xl font-bold mb-4">Subscriber Lifecycle</h1>
+      <div className="flex gap-2 mb-4">
+        {(["table", "diagram"] as ViewMode[]).map((mode) => (
+          <button
+            key={mode}
+            onClick={() => setView(mode)}
+            className={`px-3 py-1 rounded-md border ${
+              view === mode
+                ? "bg-blue-600 text-white"
+                : "bg-white text-gray-700 hover:bg-gray-100"
+            }`}
+          >
+            {mode.charAt(0).toUpperCase() + mode.slice(1)}
+          </button>
+        ))}
+      </div>
       {
         data
           ? (
-            <>
-              <PastSubscribersTable rows={data.past} />
-              <CurrentSubscribersTable rows={data.current} />
-            </>
+            view === "table"
+              ? (
+                <>
+                  <PastSubscribersTable rows={data.past} />
+                  <CurrentSubscribersTable rows={data.current} />
+                </>
+              )
+              : <SubscriberLifecycleDiagram entries={[...data.past, ...data.current]} />
           )
           : <p className="text-gray-500">Loading...</p>
       }
