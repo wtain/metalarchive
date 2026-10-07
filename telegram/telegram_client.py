@@ -12,6 +12,9 @@ class TelegramTelethonClient:
         # Authenticate
         await self.client.start(phone=telegram_phone)
 
+    async def disconnect(self):
+        await self.client.disconnect()
+
     async def get_channel(self, channel_name):
         return await self.client.get_entity(channel_name)
 

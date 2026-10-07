@@ -70,17 +70,29 @@ async def poll_from_telegram(session, channelName):
     with TelegramSession(ENCRYPTION_KEY) as encrypted_session:
         telegram_client = TelegramTelethonClient(encrypted_session, TELEGRAM_API_ID, TELEGRAM_API_HASH)
 
-        await telegram_client.start(TELEGRAM_PHONE)
+        try:
+            await telegram_client.start(TELEGRAM_PHONE)
 
-        channel = await telegram_client.get_channel(channelName)
+            channel = await telegram_client.get_channel(channelName)
 
-        with DatabaseSession(session) as session_wrapper:
-            f1 = export_subscribers(telegram_client, channel, lambda: session_wrapper.create_subscribers_saver())
+            with DatabaseSession(session) as session_wrapper:
+                f1 = export_subscribers(telegram_client, channel, lambda: session_wrapper.create_subscribers_saver())
 
-            f2 = export_posts(telegram_client, channel, lambda: session_wrapper.create_posts_saver())
+                f2 = export_posts(telegram_client, channel, lambda: session_wrapper.create_posts_saver())
 
-            logger.info(f"Waiting for background tasks to complete")
-            results = await asyncio.gather(f1, f2)
-            logger.info(f"Results {results}")
-            return results
+                logger.info(f"Waiting for background tasks to complete")
+                results = await asyncio.gather(f1, f2)
+                logger.info(f"Results {results}")
+                return results
+        finally:
+            # Without this, the client's connection keepalive/update-loop
+            # tasks are left dangling on this call's event loop once the
+            # function returns. They get garbage-collected at some later,
+            # unpredictable point (often during the NEXT poll's blocking AI
+            # step, since that's what starves this loop long enough for
+            # Telegram's keepalive to lapse and trigger a reconnect attempt
+            # on a loop that's by then been torn down) - producing "Task was
+            # destroyed but it is pending!" / "Event loop is closed" noise
+            # and leaking the underlying TCP connection to Telegram.
+            await telegram_client.disconnect()
 

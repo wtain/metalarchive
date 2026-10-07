@@ -28,7 +28,14 @@ def update_data(
 ):
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    result = loop.run_until_complete(poll_from_telegram(db, CHANNEL_NAME))
+    try:
+        result = loop.run_until_complete(poll_from_telegram(db, CHANNEL_NAME))
+    finally:
+        # Without this the loop is only ever closed implicitly by GC, at an
+        # unpredictable later point - that delay is what made the leaked
+        # Telegram connection's teardown errors show up during an unrelated
+        # later poll instead of right here.
+        loop.close()
     # Subscriber snapshots only change on a real poll, so this is the only
     # point where the materialized lifecycle data could go stale.
     update_subscriber_lifecycle(db)
@@ -44,7 +51,7 @@ def update_tags(
 ):
     posts = (
         db.query(Post.id.label("post_id"), Post.text)
-        .filter(Post.text.isnot(None))
+        .filter(Post.text.isnot(None), Post.text != "")
         .order_by(Post.id.desc())
     ).all()
     title_extractor = TagsExtractor()
@@ -69,7 +76,7 @@ def update_titles(
 ):
     posts = (
         db.query(Post.id.label("post_id"), Post.text)
-        .filter(Post.text.isnot(None))
+        .filter(Post.text.isnot(None), Post.text != "")
         .order_by(Post.id.desc())
     ).all()
     title_extractor = TitleExtractor()
@@ -93,7 +100,7 @@ def update_embeddings(
 ):
     posts = (
         db.query(Post.id.label("post_id"), Post.text)
-        .filter(Post.text.isnot(None))
+        .filter(Post.text.isnot(None), Post.text != "")
         .order_by(Post.id.desc())
     ).all()
     embeddings_extractor = EmbeddingsExtractor()
