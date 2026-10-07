@@ -5,6 +5,7 @@ from environment.secrets import ENCRYPTION_KEY, TELEGRAM_API_ID, TELEGRAM_API_HA
 from storage_client.DatabaseSession import DatabaseSession
 from telegram.TelegramSession import TelegramSession
 from telegram.telegram_client import TelegramTelethonClient
+from telegram.web_preview import fetch_post_text_from_web_preview
 
 
 logger = logging.getLogger("uvicorn.info")
@@ -35,6 +36,17 @@ async def poll_from_telegram(session, channelName):
 
                 message_tail = "\n".join(comments_messages)
                 post_content = message.text
+                if not post_content and message.media is not None:
+                    # Telethon (and even Telegram's own web client) can't
+                    # render some newer message formats - see
+                    # telegram/web_preview.py for the full story. message.media
+                    # not None but text empty is the signal something's
+                    # there we're just not capturing; run_in_executor-style
+                    # to_thread keeps this blocking HTTP call off the event
+                    # loop other Telegram I/O for this poll depends on.
+                    post_content = await asyncio.to_thread(
+                        fetch_post_text_from_web_preview, channelName, message.id
+                    ) or post_content
                 if message_tail:
                     post_content += "\n" + message_tail
 
