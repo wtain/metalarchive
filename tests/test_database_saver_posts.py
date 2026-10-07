@@ -1,7 +1,7 @@
 import pytest
 
 from database_saver.posts import PostsStatsDatabaseSaver
-from storage_client.models import BatchRun, Post, PostEmbedding, PostHeader, PostMetric
+from storage_client.models import BatchRun, Post, PostEmbedding, PostHeader, PostMetric, PostTags
 
 FAKE_EMBEDDING = [0.1] * 384
 
@@ -70,6 +70,23 @@ def test_existing_post_text_update_does_not_touch_header(db_session):
 
     assert post.text == "Edited text"
     assert header.title == "Original Title"
+
+
+def test_caption_less_media_post_skips_ai_extraction(db_session):
+    # Regression test: a post with no text (e.g. media with no caption) must
+    # not get a hallucinated title/tags/embedding from feeding empty input
+    # to the AI models.
+    batch = make_batch(db_session)
+
+    with PostsStatsDatabaseSaver(db_session, batch.id) as saver:
+        saver.write_row(id=1, date=batch.timestamp, views=1, forwards=0, reactions="", comments=0, text="")
+    db_session.commit()
+
+    post = db_session.query(Post).filter(Post.id == 1).one()
+    assert post.text == ""
+    assert db_session.query(PostHeader).filter(PostHeader.post_id == 1).count() == 0
+    assert db_session.query(PostTags).filter(PostTags.post_id == 1).count() == 0
+    assert db_session.query(PostEmbedding).filter(PostEmbedding.post_id == 1).count() == 0
 
 
 def test_new_and_existing_posts_in_the_same_batch(db_session):

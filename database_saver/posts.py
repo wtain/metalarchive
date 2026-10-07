@@ -74,6 +74,13 @@ class PostsStatsDatabaseSaver:
         for post in posts_to_add:
             post_id = post.id
             text = post.text
+            if not text:
+                # Caption-less media post - nothing for the tag/title/embedding
+                # models to work with. Without this they still run and
+                # produce meaningless output (an empty tag list, a title
+                # hallucinated from nothing, a near-zero embedding).
+                logger.info(f"Post {post_id} has no text, skipping tag/title/embedding extraction")
+                continue
             tags = tags_extractor.get_tags(text)
             logger.info(f"Extracted tags: {tags}")
             title = title_extractor.get_title(text)
