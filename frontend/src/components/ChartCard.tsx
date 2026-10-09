@@ -12,11 +12,34 @@ interface ChartCardProps {
   data: ChartDataPoint[];
 }
 
+// The "default" subscriber-count period returns one raw point per batch run
+// (every ~15 min since mid-2025 - 25k+ points), which hangs the chart trying
+// to render that many SVG elements. Downsamples to at most MAX_POINTS by
+// taking the last value in each bucket - representative for a count that can
+// both rise and fall (unlike max, which would visually fabricate spikes),
+// and for a monotonically-increasing series (post views) it's equivalent to
+// max anyway. No-op for the already-small daily/weekly/monthly views.
+const MAX_POINTS = 500;
+
+function downsample(data: ChartDataPoint[], maxPoints: number): ChartDataPoint[] {
+  if (data.length <= maxPoints) return data;
+
+  const bucketSize = Math.ceil(data.length / maxPoints);
+  const result: ChartDataPoint[] = [];
+  for (let i = 0; i < data.length; i += bucketSize) {
+    const bucket = data.slice(i, i + bucketSize);
+    result.push(bucket[bucket.length - 1]);
+  }
+  return result;
+}
+
 export default function ChartCard({ title, data }: ChartCardProps) {
+  const displayData = downsample(data, MAX_POINTS);
+
   const series = [
     {
       name: "Count",
-      data: data.map((d) => d.count),
+      data: displayData.map((d) => d.count),
     },
   ];
 
@@ -38,7 +61,7 @@ export default function ChartCard({ title, data }: ChartCardProps) {
     // recharts rendering - rather than risk misparsing those.
     xaxis: {
       type: "category",
-      categories: data.map((d) => d.timestamp),
+      categories: displayData.map((d) => d.timestamp),
     },
     stroke: {
       curve: "smooth",
