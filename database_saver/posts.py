@@ -70,6 +70,9 @@ class PostsStatsDatabaseSaver:
         logger.info("Analysing new posts")
         title_extractor = TitleExtractor()
         tags_extractor = TagsExtractor()
+        # IDF needs document frequencies over the whole channel, not just this
+        # batch's handful of new posts, or every tag would look equally rare.
+        tags_extractor.fit_corpus(list(posts_in_db.values()) + [post.text for post in posts_to_add])
         embeddings_extractor = EmbeddingsExtractor()
         for post in posts_to_add:
             post_id = post.id

@@ -54,14 +54,15 @@ def update_tags(
         .filter(Post.text.isnot(None), Post.text != "")
         .order_by(Post.id.desc())
     ).all()
-    title_extractor = TagsExtractor()
+    tags_extractor = TagsExtractor()
+    tags_extractor.fit_corpus([post[1] for post in posts])
     db.execute(
         delete(PostTags)
     )
     for post in posts:
         post_id = post[0]
         post_text = post[1]
-        tags = title_extractor.get_tags(post_text)
+        tags = tags_extractor.get_tags(post_text)
         logger.info(tags)
         for name, probability in tags:
             db.add(PostTags(post_id=post_id, name=name, probability=probability))

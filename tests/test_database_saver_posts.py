@@ -7,6 +7,9 @@ FAKE_EMBEDDING = [0.1] * 384
 
 
 class FakeTagsExtractor:
+    def fit_corpus(self, texts):
+        pass
+
     def get_tags(self, text):
         return [("tag", 0.5)]
 
