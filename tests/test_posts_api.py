@@ -29,6 +29,29 @@ def test_list_posts_includes_hydrated_title_tags_and_latest_metrics(client, db_s
     assert post["comments"] == 1
 
 
+def test_list_posts_filters_by_exact_tag_name(client, db_session):
+    db_session.add_all([Post(id=1, text="Hello"), Post(id=2, text="World")])
+    db_session.add(PostTags(post_id=1, name="thrash", probability=0.9))
+    db_session.add(PostTags(post_id=2, name="doom", probability=0.9))
+    db_session.commit()
+
+    response = client.get("/api/posts/posts?tag=thrash")
+    assert response.status_code == 200
+
+    posts = response.json()
+    assert [p["post_id"] for p in posts] == [1]
+
+
+def test_list_posts_filters_by_tag_name_is_case_sensitive(client, db_session):
+    db_session.add(Post(id=1, text="Hello"))
+    db_session.add(PostTags(post_id=1, name="Thrash", probability=0.9))
+    db_session.commit()
+
+    response = client.get("/api/posts/posts?tag=thrash")
+    assert response.status_code == 200
+    assert response.json() == []
+
+
 def test_list_posts_without_header_or_metrics_defaults_gracefully(client, db_session):
     db_session.add(Post(id=2, text="No header yet"))
     db_session.commit()

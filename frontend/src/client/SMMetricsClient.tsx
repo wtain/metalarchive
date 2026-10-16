@@ -1,6 +1,6 @@
 
 import { ChartDataPoint } from "@/components/ChartCard";
-import { Digest, Post, PostMetricsDataPoint, SimilarPosts, SubscriberChanges, SubscriberLifecycle, TagData } from "@/dto/BackendDataTypes";
+import { Digest, Post, PostMetricsDataPoint, SimilarPosts, SubscriberChanges, SubscriberLifecycle, TagCloudEntry, TagData } from "@/dto/BackendDataTypes";
 import axios from "axios";
 
 const HEADERS = {
@@ -23,9 +23,16 @@ export class SMMetricsClient {
         this.baseUrl = baseUrl;
     }
 
-    async listPosts(): Promise<Post[]> {
+    async listPosts(tag?: string): Promise<Post[]> {
+        const query = tag ? `?tag=${encodeURIComponent(tag)}` : "";
         const result = await axios
-          .get<{ data: Post[] }>(`${this.baseUrl}/api/posts/posts`, CONFIG);
+          .get<{ data: Post[] }>(`${this.baseUrl}/api/posts/posts${query}`, CONFIG);
+        return result.data;
+    }
+
+    async getTagCloud(): Promise<TagCloudEntry[]> {
+        const result = await axios
+          .get<{ data: TagCloudEntry[] }>(`${this.baseUrl}/api/tags/cloud`, CONFIG);
         return result.data;
     }
 

@@ -1,11 +1,24 @@
 from fastapi import APIRouter, Depends
-from sqlalchemy import delete
+from sqlalchemy import delete, func
 from sqlalchemy.orm import Session
 
 from db.session import get_db
 from storage_client.models import PostTags
 
 router = APIRouter()
+
+
+@router.get("/cloud")
+def get_tag_cloud(
+    db: Session = Depends(get_db)
+):
+    rows = (
+        db.query(PostTags.name, func.count(PostTags.id).label("count"))
+        .group_by(PostTags.name)
+        .order_by(func.count(PostTags.id).desc())
+        .all()
+    )
+    return [{"name": name, "count": count} for name, count in rows]
 
 
 @router.post("/add")

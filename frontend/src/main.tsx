@@ -6,6 +6,8 @@ import SubscribersPage from "./pages/SubscribersPage";
 import ReactionsPage from "./pages/ReactionsPage";
 import PostDetailsPage from "./pages/PostDetailsPage";
 import PostListPage from "./pages/PostListPage";
+import SearchResultsPage from "./pages/SearchResultsPage";
+import TagsCloudPage from "./pages/TagsCloudPage";
 import TopPostsPage from "./pages/TopPostsPage";
 import SubscriberChangesPage from "./pages/SubscriberChangesPage";
 import SubscriberLifecyclePage from "./pages/SubscriberLifecyclePage";
@@ -24,6 +26,8 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             <Route path="subscriber-changes" element={<SubscriberChangesPage metricsClient={client} />} />
             <Route path="subscriber-lifecycle" element={<SubscriberLifecyclePage metricsClient={client} />} />
             <Route path="posts" element={<PostListPage metricsClient={client} />} />
+            <Route path="search" element={<SearchResultsPage metricsClient={client} />} />
+            <Route path="tags" element={<TagsCloudPage metricsClient={client} />} />
             <Route path="top" element={<TopPostsPage metricsClient={client} />} />
             <Route path="posts/:id" element={<PostDetailsPage metricsClient={client} />} />
           </Route>

@@ -7,9 +7,10 @@ interface EditableTagListProps {
   postId: number;
   initialTags: TagData[];
   client: SMMetricsClient;
+  onClickTag?: (name: string) => void;
 }
 
-export default function EditableTagList({ postId, initialTags, client }: EditableTagListProps) {
+export default function EditableTagList({ postId, initialTags, client, onClickTag }: EditableTagListProps) {
   const [tags, setTags] = useState(initialTags);
   const [newTag, setNewTag] = useState("");
 
@@ -41,6 +42,8 @@ export default function EditableTagList({ postId, initialTags, client }: Editabl
             key={tag.id}
             label={tag.name}
             onRemove={() => removeTag(tag.id)}
+            onClick={onClickTag ? () => onClickTag(tag.name) : undefined}
+            clickable={!!onClickTag}
           />
         ))}
       </div>

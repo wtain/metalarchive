@@ -1,3 +1,5 @@
+from typing import Optional
+
 from fastapi import APIRouter, Depends
 from sqlalchemy import update, func, and_
 from sqlalchemy.orm import Session, aliased
@@ -50,6 +52,7 @@ def update_post_header(
 
 @router.get("/posts")
 def get_all_posts(
+    tag: Optional[str] = None,
     db: Session = Depends(get_db)
 ):
     latest_run_id = db.query(func.max(BatchRun.id)).scalar()
@@ -61,6 +64,8 @@ def get_all_posts(
         .filter(Post.text.isnot(None))
         .order_by(Post.id.desc())
     )
+    if tag is not None:
+        query = query.join(PostTags, and_(PostTags.post_id == Post.id, PostTags.name == tag))
     return hydrate_posts(db, convert_data_to_json(query))
 
 

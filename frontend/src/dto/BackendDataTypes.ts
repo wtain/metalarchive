@@ -33,6 +33,11 @@ export interface TagData {
     probability?: number;
 }
 
+export interface TagCloudEntry {
+    name: string;
+    count: number;
+}
+
 export interface Post {
     text: string;
     post_id: number;
