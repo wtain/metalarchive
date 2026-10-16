@@ -1,6 +1,11 @@
+import logging
+import os
+
 from telethon import TelegramClient
 from telethon.tl.functions.channels import GetFullChannelRequest
 from telethon.tl.functions.messages import GetRepliesRequest
+
+logger = logging.getLogger("uvicorn.info")
 
 
 class TelegramTelethonClient:
@@ -23,11 +28,27 @@ class TelegramTelethonClient:
         return full.chats[0] if full.chats else None  # not used actually...
 
     async def get_message(self, channel, message_id):
-        pass
+        messages = await self.client.get_messages(channel, ids=[message_id])
+        return messages[0] if messages else None
 
     async def list_messages(self, channel):
         async for message in self.client.iter_messages(channel, limit=200):   # adjust limit
             yield message
+
+    async def download_photo(self, message, dest_dir, file_name):
+        """Downloads a message's photo to dest_dir/file_name. Returns file_name
+        on success, or None if the message has no downloadable photo (covers
+        text-only posts and media Telethon can't decode, e.g. the newer
+        single-message multi-photo format - see telegram/web_preview.py) or
+        the download itself fails."""
+        if message.photo is None:
+            return None
+        try:
+            await self.client.download_media(message, file=os.path.join(dest_dir, file_name))
+            return file_name
+        except Exception as e:
+            logger.warning(f"Error downloading photo for message {message.id}: {e}")
+            return None
 
     async def list_participants(self, channel):
         async for user in self.client.iter_participants(channel):

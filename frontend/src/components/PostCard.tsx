@@ -28,6 +28,18 @@ export default function PostCard({ post, client }: PostCardProps ) {
             </CardTitle>
           </CardHeader>
           <CardContent>
+            {post.images && post.images.length > 0 && (
+              <div className={`grid gap-2 mb-3 ${post.images.length > 1 ? "grid-cols-2" : "grid-cols-1"}`}>
+                {post.images.map((image) => (
+                  <img
+                    key={image.id}
+                    src={`${client.baseUrl}${image.url}`}
+                    alt=""
+                    className="w-full h-40 object-cover rounded-md"
+                  />
+                ))}
+              </div>
+            )}
             <EditableTagList
               postId={post.post_id}
               initialTags={post.tags ?? []}

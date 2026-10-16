@@ -10,9 +10,9 @@ from aitools.tags import TagsExtractor
 from aitools.title import TitleExtractor
 from db.session import get_db
 from environment.secrets import CHANNEL_NAME
-from storage_client.models import Post, PostHeader, PostTags, PostEmbedding
+from storage_client.models import Post, PostHeader, PostTags, PostEmbedding, PostImage
 from storage_client.subscribers import update_subscriber_lifecycle
-from synchronizer.poller import poll_from_telegram
+from synchronizer.poller import poll_from_telegram, backfill_images
 
 logger = logging.getLogger("uvicorn.info")
 
@@ -114,6 +114,31 @@ def update_embeddings(
         embedding = embeddings_extractor.get_embedding(post_text)
         db.add(PostEmbedding(post_id=post_id, model_name=EMBEDDING_MODEL_NAME, embedding=embedding))
     db.commit()
+
+"""
+curl -X POST http://127.0.0.1:8001/api/updater/update_images
+"""
+@router.post("/update_images")
+def update_images(
+    db: Session = Depends(get_db)
+):
+    post_ids = [post[0] for post in db.query(Post.id).order_by(Post.id.desc()).all()]
+
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        images_by_post_id = loop.run_until_complete(backfill_images(post_ids, CHANNEL_NAME))
+    finally:
+        loop.close()
+
+    db.execute(
+        delete(PostImage)
+    )
+    for post_id, file_names in images_by_post_id.items():
+        for position, file_name in enumerate(file_names):
+            db.add(PostImage(post_id=post_id, file_name=file_name, position=position))
+    db.commit()
+    return {"posts_with_images": len(images_by_post_id)}
 
 """
 curl -X POST http://127.0.0.1:8001/api/updater/update_subscriber_lifecycle

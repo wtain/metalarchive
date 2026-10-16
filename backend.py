@@ -29,6 +29,7 @@ import uvicorn
 from apscheduler.schedulers.background import BackgroundScheduler
 from dotenv import load_dotenv
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
 from starlette.middleware.cors import CORSMiddleware
 from starlette.responses import Response
@@ -36,6 +37,7 @@ from starlette.responses import Response
 from api import subscribers, reports, posts, updater, tags
 from api.updater import update_data
 
+from environment.media import MEDIA_PATH, MEDIA_URL_PREFIX
 from metrics.middleware import MetricsMiddleware
 from storage_client.db_sync import SessionLocal
 
@@ -104,6 +106,8 @@ app.include_router(reports.router, prefix="/api/reports", tags=["Digest"])
 app.include_router(posts.router, prefix="/api/posts", tags=["Posts"])
 app.include_router(updater.router, prefix="/api/updater", tags=["Update"])
 app.include_router(tags.router, prefix="/api/tags", tags=["Tags"])
+
+app.mount(MEDIA_URL_PREFIX, StaticFiles(directory=str(MEDIA_PATH)), name="media")
 
 
 @app.get("/")

@@ -4,7 +4,7 @@ from functools import reduce
 from aitools.embeddings import EmbeddingsExtractor, MODEL_NAME as EMBEDDING_MODEL_NAME
 from aitools.tags import TagsExtractor
 from aitools.title import TitleExtractor
-from storage_client.models import PostMetric, Post, PostTags, PostHeader, PostEmbedding
+from storage_client.models import PostMetric, Post, PostTags, PostHeader, PostEmbedding, PostImage
 from storage_client.posts import count_reactions
 
 
@@ -17,9 +17,10 @@ class PostsStatsDatabaseSaver:
         self.session = session
         self.records_posts = []
         self.records_stats = []
+        self.records_images = {}
         self.batch_id = batch_id
 
-    def write_row(self, id, date, views, forwards, reactions, comments, text):
+    def write_row(self, id, date, views, forwards, reactions, comments, text, images=None):
         self.records_posts.append(
             Post(id=id,
                  text=text)
@@ -34,6 +35,7 @@ class PostsStatsDatabaseSaver:
             # todo: add missing columns: forwards and excerpt
             # todo: separate posts table
         ))
+        self.records_images[id] = images or []
 
     def __enter__(self):
         return self
@@ -93,3 +95,7 @@ class PostsStatsDatabaseSaver:
                 self.session.add(PostTags(post_id=post_id, name=name, probability=probability))
             self.session.add(PostHeader(post_id=post_id, title=title))
             self.session.add(PostEmbedding(post_id=post_id, model_name=EMBEDDING_MODEL_NAME, embedding=embedding))
+
+        for post in posts_to_add:
+            for position, file_name in enumerate(self.records_images.get(post.id, [])):
+                self.session.add(PostImage(post_id=post.id, file_name=file_name, position=position))

@@ -1,9 +1,10 @@
 import json
 from collections import defaultdict
 
+from environment.media import MEDIA_URL_PREFIX
 from storage_client.db_sync import SessionLocal, engine
 # from storage_client.models import SessionLocal, PostMetric, engine, Subscriber
-from storage_client.models import PostMetric, PostHeader, PostTags
+from storage_client.models import PostMetric, PostHeader, PostTags, PostImage
 import pandas as pd
 
 from storage_client.utils import coerce_int
@@ -36,12 +37,32 @@ def fetch_titles_and_tags(session, post_ids):
     }
 
 
+def fetch_images(session, post_ids):
+    if not post_ids:
+        return {}
+
+    images_by_post = defaultdict(list)
+    image_rows = (
+        session.query(PostImage.post_id, PostImage.id, PostImage.file_name)
+        .filter(PostImage.post_id.in_(post_ids))
+        .order_by(PostImage.position)
+        .all()
+    )
+    for post_id, image_id, file_name in image_rows:
+        images_by_post[post_id].append({"id": image_id, "url": f"{MEDIA_URL_PREFIX}/{file_name}"})
+
+    return images_by_post
+
+
 def hydrate_posts(session, posts):
-    details = fetch_titles_and_tags(session, [post["post_id"] for post in posts])
+    post_ids = [post["post_id"] for post in posts]
+    details = fetch_titles_and_tags(session, post_ids)
+    images_by_post = fetch_images(session, post_ids)
     for post in posts:
         info = details.get(post["post_id"], {"title": None, "tags": []})
         post["title"] = info["title"]
         post["tags"] = info["tags"]
+        post["images"] = images_by_post.get(post["post_id"], [])
     return posts
 
 

@@ -47,6 +47,8 @@ Note the in-process `APScheduler` job (channel poll every 15 minutes, see `backe
 
 Triggering a scrape (manually via `/api/updater/update`, or via the scheduler) reads the encrypted Telegram session from `TELEGRAM_SESSION_ENC_PATH` (`telegram/TelegramSession.py`), defaulting to `/var/lib/telegram/stats_session.session.enc` — that default only exists inside the `backend` container, where `docker-compose.yml` mounts `./secrets` there. `.env` overrides it to the repo-relative `secrets/stats_session.session.enc` so a natively-run backend can decrypt it; `.env-docker` leaves the default alone since the container still gets the volume mount.
 
+Downloaded post images follow the same pattern via `MEDIA_PATH` (`environment/media.py`), defaulting to `/var/lib/app/media` (only valid inside the `backend` container, where `docker-compose.yml` mounts `./media` there). `.env` overrides it to the repo-relative `media/`; `.env-docker` leaves the default alone.
+
 **3. Run the frontend dev server**, from `frontend/`:
 
 ```bash

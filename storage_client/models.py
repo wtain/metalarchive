@@ -54,6 +54,16 @@ class PostTags(Base):
     post = relationship("Post")
 
 
+class PostImage(Base):
+    __tablename__ = "posts_images"
+    id = Column(Integer, primary_key=True)
+    post_id = Column(Integer, ForeignKey("posts.id"), index=True)
+    file_name = Column(String, nullable=False)
+    position = Column(Integer, nullable=False, default=0)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    post = relationship("Post")
+
+
 class PostEmbedding(Base):
     __tablename__ = "posts_embeddings"
     id = Column(Integer, primary_key=True)

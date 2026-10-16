@@ -1,7 +1,7 @@
 import pytest
 
 from database_saver.posts import PostsStatsDatabaseSaver
-from storage_client.models import BatchRun, Post, PostEmbedding, PostHeader, PostMetric, PostTags
+from storage_client.models import BatchRun, Post, PostEmbedding, PostHeader, PostImage, PostMetric, PostTags
 
 FAKE_EMBEDDING = [0.1] * 384
 
@@ -56,6 +56,32 @@ def test_new_post_and_metric_save_without_fk_violation(db_session):
     assert metric.run_id == batch.id
     assert header.title == "Fake Title"
     assert list(embedding.embedding) == FAKE_EMBEDDING
+
+
+def test_new_post_images_are_saved_in_order(db_session):
+    batch = make_batch(db_session)
+
+    with PostsStatsDatabaseSaver(db_session, batch.id) as saver:
+        saver.write_row(id=1, date=batch.timestamp, views=1, forwards=0, reactions="", comments=0,
+                         text="Post with photos", images=["1_0.jpg", "1_1.jpg"])
+    db_session.commit()
+
+    images = db_session.query(PostImage).filter(PostImage.post_id == 1).order_by(PostImage.position).all()
+
+    assert [(image.file_name, image.position) for image in images] == [("1_0.jpg", 0), ("1_1.jpg", 1)]
+
+
+def test_caption_less_post_still_saves_its_image(db_session):
+    batch = make_batch(db_session)
+
+    with PostsStatsDatabaseSaver(db_session, batch.id) as saver:
+        saver.write_row(id=1, date=batch.timestamp, views=1, forwards=0, reactions="", comments=0,
+                         text="", images=["1_0.jpg"])
+    db_session.commit()
+
+    image = db_session.query(PostImage).filter(PostImage.post_id == 1).one()
+
+    assert image.file_name == "1_0.jpg"
 
 
 def test_existing_post_text_update_does_not_touch_header(db_session):

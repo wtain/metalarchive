@@ -39,6 +39,7 @@ services:
     volumes:
       - ./logs:/var/log/app
       - ./secrets:/var/lib/telegram/
+      - ./media:/var/lib/app/media
     env_file:
       - ./.env-docker  # do we need it here?
     depends_on:

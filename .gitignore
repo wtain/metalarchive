@@ -23,5 +23,6 @@ __pycache__
 .DS_Store
 
 logs/
+media/
 
 *.log

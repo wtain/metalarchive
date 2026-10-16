@@ -38,6 +38,11 @@ export interface TagCloudEntry {
     count: number;
 }
 
+export interface PostImage {
+    id: number;
+    url: string;
+}
+
 export interface Post {
     text: string;
     post_id: number;
@@ -46,6 +51,7 @@ export interface Post {
     comments?: number;
     title?: string;
     tags?: TagData[];
+    images?: PostImage[];
 }
 
 export interface PostMetricsDataPoint {

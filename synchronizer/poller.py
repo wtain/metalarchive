@@ -1,6 +1,7 @@
 import asyncio
 import logging
 
+from environment.media import MEDIA_PATH
 from environment.secrets import ENCRYPTION_KEY, TELEGRAM_API_ID, TELEGRAM_API_HASH, TELEGRAM_PHONE
 from storage_client.DatabaseSession import DatabaseSession
 from telegram.TelegramSession import TelegramSession
@@ -11,13 +12,39 @@ from telegram.web_preview import fetch_post_text_from_web_preview
 logger = logging.getLogger("uvicorn.info")
 
 
+async def group_consecutive_albums(messages):
+    """Groups consecutive Telegram messages sharing a grouped_id - the classic
+    multi-message photo album - into one list; everything else becomes a
+    single-element list. Relies on iter_messages() returning album members
+    adjacently, which holds for a single unpaginated channel fetch since
+    they're created together and share a timestamp."""
+    pending = []
+    async for message in messages:
+        if pending and message.grouped_id != pending[-1].grouped_id:
+            yield pending
+            pending = []
+        pending.append(message)
+        if message.grouped_id is None:
+            yield pending
+            pending = []
+    if pending:
+        yield pending
+
+
+def pick_canonical_message(group):
+    # Exactly one message in an album usually carries the caption; fall back
+    # to the first if none do (group is a list of one for non-album posts).
+    return next((message for message in group if message.text), group[0])
+
+
 async def poll_from_telegram(session, channelName):
 
     async def export_posts(telegram_client, channel, create_saver):
         count = 0
         with create_saver() as saver:
             logger.info("Loading posts...")
-            async for message in telegram_client.list_messages(channel):
+            async for group in group_consecutive_albums(telegram_client.list_messages(channel)):
+                message = pick_canonical_message(group)
                 reactions = message.reactions.to_json() if message.reactions else ""
 
                 def filter_spillover_comments(iter):
@@ -53,6 +80,14 @@ async def poll_from_telegram(session, channelName):
                 # Get comment count (if linked chat exists)
                 comments_count = await telegram_client.get_comments_count(channel, message.id)
 
+                image_names = []
+                for index, group_message in enumerate(group):
+                    file_name = await telegram_client.download_photo(
+                        group_message, str(MEDIA_PATH), f"{message.id}_{index}.jpg"
+                    )
+                    if file_name:
+                        image_names.append(file_name)
+
                 saver.write_row(
                     message.id,
                     message.date,
@@ -60,7 +95,8 @@ async def poll_from_telegram(session, channelName):
                     message.forwards or 0,
                     reactions,
                     comments_count,
-                    post_content
+                    post_content,
+                    image_names
                 )
                 count += 1
         return count
@@ -107,4 +143,27 @@ async def poll_from_telegram(session, channelName):
             # destroyed but it is pending!" / "Event loop is closed" noise
             # and leaking the underlying TCP connection to Telegram.
             await telegram_client.disconnect()
+
+
+async def backfill_images(post_ids, channelName):
+    """One-time recovery of images for posts that were scraped before image
+    downloading existed - unlike poll_from_telegram, this has to refetch each
+    message from Telegram since its photo was never downloaded originally.
+    Returns {post_id: [file_name, ...]} for posts whose photo was recovered."""
+    images_by_post_id = {}
+    with TelegramSession(ENCRYPTION_KEY) as encrypted_session:
+        telegram_client = TelegramTelethonClient(encrypted_session, TELEGRAM_API_ID, TELEGRAM_API_HASH)
+        try:
+            await telegram_client.start(TELEGRAM_PHONE)
+            channel = await telegram_client.get_channel(channelName)
+            for post_id in post_ids:
+                message = await telegram_client.get_message(channel, post_id)
+                if message is None:
+                    continue
+                file_name = await telegram_client.download_photo(message, str(MEDIA_PATH), f"{post_id}_0.jpg")
+                if file_name:
+                    images_by_post_id[post_id] = [file_name]
+        finally:
+            await telegram_client.disconnect()
+    return images_by_post_id
 
