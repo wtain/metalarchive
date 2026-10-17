@@ -6,7 +6,11 @@ from environment.secrets import ENCRYPTION_KEY, TELEGRAM_API_ID, TELEGRAM_API_HA
 from storage_client.DatabaseSession import DatabaseSession
 from telegram.TelegramSession import TelegramSession
 from telegram.telegram_client import TelegramTelethonClient
-from telegram.web_preview import fetch_post_text_from_web_preview
+from telegram.web_preview import (
+    download_post_image_from_web_preview,
+    fetch_channel_logo_url,
+    fetch_post_text_from_web_preview,
+)
 
 
 logger = logging.getLogger("uvicorn.info")
@@ -37,10 +41,33 @@ def pick_canonical_message(group):
     return next((message for message in group if message.text), group[0])
 
 
+async def download_photo_with_web_fallback(
+    telegram_client, message, channelName, canonical_message_id, file_name, channel_logo_url=None
+):
+    """Downloads message's photo via Telethon, falling back to the web
+    preview's og:image (see telegram/web_preview.py) when Telethon can't
+    decode the media at all - the same gap the text fallback above works
+    around, keyed off canonical_message_id since that's the group member
+    whose web preview page actually renders. channel_logo_url filters out
+    posts where that fallback would just be the channel's own avatar, not
+    real post content. Returns file_name on success, else None."""
+    saved = await telegram_client.download_photo(message, str(MEDIA_PATH), file_name)
+    if saved:
+        return saved
+    if message.media is None:
+        return None
+    recovered = await asyncio.to_thread(
+        download_post_image_from_web_preview,
+        channelName, canonical_message_id, str(MEDIA_PATH / file_name), channel_logo_url
+    )
+    return file_name if recovered else None
+
+
 async def poll_from_telegram(session, channelName):
 
     async def export_posts(telegram_client, channel, create_saver):
         count = 0
+        channel_logo_url = await asyncio.to_thread(fetch_channel_logo_url, channelName)
         with create_saver() as saver:
             logger.info("Loading posts...")
             async for group in group_consecutive_albums(telegram_client.list_messages(channel)):
@@ -82,8 +109,9 @@ async def poll_from_telegram(session, channelName):
 
                 image_names = []
                 for index, group_message in enumerate(group):
-                    file_name = await telegram_client.download_photo(
-                        group_message, str(MEDIA_PATH), f"{message.id}_{index}.jpg"
+                    file_name = await download_photo_with_web_fallback(
+                        telegram_client, group_message, channelName, message.id, f"{message.id}_{index}.jpg",
+                        channel_logo_url
                     )
                     if file_name:
                         image_names.append(file_name)
@@ -151,6 +179,7 @@ async def backfill_images(post_ids, channelName):
     message from Telegram since its photo was never downloaded originally.
     Returns {post_id: [file_name, ...]} for posts whose photo was recovered."""
     images_by_post_id = {}
+    channel_logo_url = await asyncio.to_thread(fetch_channel_logo_url, channelName)
     with TelegramSession(ENCRYPTION_KEY) as encrypted_session:
         telegram_client = TelegramTelethonClient(encrypted_session, TELEGRAM_API_ID, TELEGRAM_API_HASH)
         try:
@@ -160,7 +189,9 @@ async def backfill_images(post_ids, channelName):
                 message = await telegram_client.get_message(channel, post_id)
                 if message is None:
                     continue
-                file_name = await telegram_client.download_photo(message, str(MEDIA_PATH), f"{post_id}_0.jpg")
+                file_name = await download_photo_with_web_fallback(
+                    telegram_client, message, channelName, post_id, f"{post_id}_0.jpg", channel_logo_url
+                )
                 if file_name:
                     images_by_post_id[post_id] = [file_name]
         finally:

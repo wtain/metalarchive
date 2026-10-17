@@ -17,7 +17,8 @@ def get_post(
     db: Session = Depends(get_db)
 ):
     post_data = db.query(Post.id.label("post_id"), Post.text).filter(Post.id == id).one()
-    return { "id": post_data[0], "text": post_data[1] }
+    post = {"post_id": post_data[0], "text": post_data[1]}
+    return hydrate_posts(db, [post])[0]
 
 
 @router.get("/post_tags")

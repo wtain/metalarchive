@@ -1,10 +1,28 @@
-from storage_client.models import BatchRun, Post, PostEmbedding, PostHeader, PostMetric, PostTags
+from storage_client.models import BatchRun, Post, PostEmbedding, PostHeader, PostImage, PostMetric, PostTags
 
 
 def make_vector(first, filler=0.0):
     vector = [filler] * 384
     vector[0] = first
     return vector
+
+
+def test_get_post_includes_hydrated_title_tags_and_images(client, db_session):
+    db_session.add(Post(id=1, text="Hello world"))
+    db_session.add(PostHeader(post_id=1, title="Hello Title"))
+    db_session.add(PostTags(post_id=1, name="python", probability=0.9))
+    db_session.add(PostImage(post_id=1, file_name="1_0.jpg", position=0))
+    db_session.commit()
+
+    response = client.get("/api/posts/post?id=1")
+    assert response.status_code == 200
+
+    post = response.json()
+    assert post["post_id"] == 1
+    assert post["text"] == "Hello world"
+    assert post["title"] == "Hello Title"
+    assert post["tags"] == [{"id": 1, "name": "python", "probability": 0.9}]
+    assert post["images"] == [{"id": 1, "url": "/media/1_0.jpg"}]
 
 
 def test_list_posts_includes_hydrated_title_tags_and_latest_metrics(client, db_session):

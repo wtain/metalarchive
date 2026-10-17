@@ -42,6 +42,18 @@ export default function PostDetailsPage(props: BasePageProperties) {
       <ChartCard title={`Post ${id}`} data={views.map((v) => {
         return { timestamp: v.timestamp, count: v.views };
       })} />
+      {post.images && post.images.length > 0 && (
+        <div className={`grid gap-2 my-4 ${post.images.length > 1 ? "grid-cols-2" : "grid-cols-1"}`}>
+          {post.images.map((image) => (
+            <img
+              key={image.id}
+              src={`${client.baseUrl}${image.url}`}
+              alt=""
+              className="w-full max-h-96 object-contain rounded-md bg-gray-50"
+            />
+          ))}
+        </div>
+      )}
       <div className="text-sm text-black-500 mb-2">
         <PostText text={post.text} />
       </div>
