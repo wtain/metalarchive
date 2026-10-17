@@ -35,19 +35,14 @@ class TelegramTelethonClient:
         async for message in self.client.iter_messages(channel, limit=200):   # adjust limit
             yield message
 
-    async def download_photo(self, message, dest_dir, file_name):
-        """Downloads a message's photo to dest_dir/file_name. Returns file_name
-        on success, or None if the message has no downloadable photo (covers
-        text-only posts and media Telethon can't decode, e.g. the newer
-        single-message multi-photo format - see telegram/web_preview.py) or
-        the download itself fails."""
-        if message.photo is None:
-            return None
+    async def download_photo(self, photo, dest_dir, file_name):
+        """Downloads a Photo object (from telegram.rich_message.get_message_photos)
+        to dest_dir/file_name. Returns file_name on success, or None on failure."""
         try:
-            await self.client.download_media(message, file=os.path.join(dest_dir, file_name))
+            await self.client.download_media(photo, file=os.path.join(dest_dir, file_name))
             return file_name
         except Exception as e:
-            logger.warning(f"Error downloading photo for message {message.id}: {e}")
+            logger.warning(f"Error downloading photo to {file_name}: {e}")
             return None
 
     async def list_participants(self, channel):

@@ -5,6 +5,7 @@ from environment.media import MEDIA_PATH
 from environment.secrets import ENCRYPTION_KEY, TELEGRAM_API_ID, TELEGRAM_API_HASH, TELEGRAM_PHONE
 from storage_client.DatabaseSession import DatabaseSession
 from telegram.TelegramSession import TelegramSession
+from telegram.rich_message import extract_text as extract_rich_message_text, get_message_photos
 from telegram.telegram_client import TelegramTelethonClient
 from telegram.web_preview import (
     download_post_image_from_web_preview,
@@ -41,26 +42,42 @@ def pick_canonical_message(group):
     return next((message for message in group if message.text), group[0])
 
 
-async def download_photo_with_web_fallback(
-    telegram_client, message, channelName, canonical_message_id, file_name, channel_logo_url=None
-):
-    """Downloads message's photo via Telethon, falling back to the web
-    preview's og:image (see telegram/web_preview.py) when Telethon can't
-    decode the media at all - the same gap the text fallback above works
-    around, keyed off canonical_message_id since that's the group member
-    whose web preview page actually renders. channel_logo_url filters out
-    posts where that fallback would just be the channel's own avatar, not
-    real post content. Returns file_name on success, else None."""
-    saved = await telegram_client.download_photo(message, str(MEDIA_PATH), file_name)
-    if saved:
-        return saved
-    if message.media is None:
-        return None
-    recovered = await asyncio.to_thread(
-        download_post_image_from_web_preview,
-        channelName, canonical_message_id, str(MEDIA_PATH / file_name), channel_logo_url
-    )
-    return file_name if recovered else None
+def collect_post_photos(group):
+    """All downloadable Photo objects for a logical post (one or more
+    Telegram messages - see group_consecutive_albums): each group member's
+    regular photo, or every photo in its rich-message collage (see
+    telegram/rich_message.py) when it has no regular photo."""
+    photos = []
+    for message in group:
+        photos.extend(get_message_photos(message))
+    return photos
+
+
+async def download_post_images(telegram_client, group, channelName, canonical_message_id, channel_logo_url=None):
+    """Downloads every photo for a logical post (collect_post_photos above),
+    falling back to the web preview's og:image (telegram/web_preview.py)
+    only when nothing could be downloaded natively and some group member
+    still shows media Telethon couldn't decode at all - the same gap the
+    text fallback below works around. channel_logo_url filters out posts
+    where that fallback would just be the channel's own avatar, not real
+    post content. Returns the list of saved file names, in order."""
+    image_names = []
+    for photo in collect_post_photos(group):
+        file_name = f"{canonical_message_id}_{len(image_names)}.jpg"
+        saved = await telegram_client.download_photo(photo, str(MEDIA_PATH), file_name)
+        if saved:
+            image_names.append(saved)
+
+    if not image_names and any(message.media is not None for message in group):
+        file_name = f"{canonical_message_id}_0.jpg"
+        recovered = await asyncio.to_thread(
+            download_post_image_from_web_preview,
+            channelName, canonical_message_id, str(MEDIA_PATH / file_name), channel_logo_url
+        )
+        if recovered:
+            image_names.append(file_name)
+
+    return image_names
 
 
 async def poll_from_telegram(session, channelName):
@@ -90,6 +107,12 @@ async def poll_from_telegram(session, channelName):
 
                 message_tail = "\n".join(comments_messages)
                 post_content = message.text
+                if not post_content and message.rich_message is not None:
+                    # Telegram's newer "rich message" post format (structured
+                    # text + a photo collage) replaces message.text/media
+                    # outright for clients recent enough to understand it -
+                    # see telegram/rich_message.py.
+                    post_content = extract_rich_message_text(message.rich_message)
                 if not post_content and message.media is not None:
                     # Telethon (and even Telegram's own web client) can't
                     # render some newer message formats - see
@@ -107,14 +130,9 @@ async def poll_from_telegram(session, channelName):
                 # Get comment count (if linked chat exists)
                 comments_count = await telegram_client.get_comments_count(channel, message.id)
 
-                image_names = []
-                for index, group_message in enumerate(group):
-                    file_name = await download_photo_with_web_fallback(
-                        telegram_client, group_message, channelName, message.id, f"{message.id}_{index}.jpg",
-                        channel_logo_url
-                    )
-                    if file_name:
-                        image_names.append(file_name)
+                image_names = await download_post_images(
+                    telegram_client, group, channelName, message.id, channel_logo_url
+                )
 
                 saver.write_row(
                     message.id,
@@ -189,11 +207,11 @@ async def backfill_images(post_ids, channelName):
                 message = await telegram_client.get_message(channel, post_id)
                 if message is None:
                     continue
-                file_name = await download_photo_with_web_fallback(
-                    telegram_client, message, channelName, post_id, f"{post_id}_0.jpg", channel_logo_url
+                image_names = await download_post_images(
+                    telegram_client, [message], channelName, post_id, channel_logo_url
                 )
-                if file_name:
-                    images_by_post_id[post_id] = [file_name]
+                if image_names:
+                    images_by_post_id[post_id] = image_names
         finally:
             await telegram_client.disconnect()
     return images_by_post_id
