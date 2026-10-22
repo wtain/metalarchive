@@ -91,3 +91,30 @@ export interface Digest {
 }
 
 // export * as BackendDataTypes from './BackendDataTypes'
+export interface MetricSummary {
+    total: number;
+    change: number;
+}
+
+export interface Summary {
+    period: string;
+    available: boolean;
+    from?: string;
+    to?: string;
+    posts?: {
+        total: number;
+        new_count: number;
+        new: Post[];
+    };
+    subscribers?: {
+        total: number;
+        change: number;
+        new_count: number;
+        removed_count: number;
+        new: Subscriber[];
+        removed: Subscriber[];
+    };
+    views?: MetricSummary;
+    reactions?: MetricSummary;
+    comments?: MetricSummary;
+}

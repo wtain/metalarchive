@@ -11,6 +11,7 @@ import TagsCloudPage from "./pages/TagsCloudPage";
 import TopPostsPage from "./pages/TopPostsPage";
 import SubscriberChangesPage from "./pages/SubscriberChangesPage";
 import SubscriberLifecyclePage from "./pages/SubscriberLifecyclePage";
+import SummaryPage from "./pages/SummaryPage";
 import "./index.css";
 import { SMMetricsClient } from "./client/SMMetricsClient";
 
@@ -21,6 +22,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     <BrowserRouter>
         <Routes>
           <Route path="/" element={<App />}>
+            <Route path="summary" element={<SummaryPage metricsClient={client} />} />
             <Route path="reactions" element={<ReactionsPage metricsClient={client} />} />
             <Route index path="subscribers" element={<SubscribersPage metricsClient={client} />} />
             <Route path="subscriber-changes" element={<SubscriberChangesPage metricsClient={client} />} />

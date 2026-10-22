@@ -7,8 +7,9 @@ from sqlalchemy.orm import Session, aliased
 
 from daily_digest import get_last_run, get_subscribers_diffs, get_post_diffs
 from db.session import get_db
-from storage_client.models import Post, PostMetric, BatchRun
+from storage_client.models import Post, PostMetric, BatchRun, Subscriber
 from storage_client.posts import hydrate_posts
+from storage_client.subscribers import get_subscriber_changes
 
 
 logger = logging.getLogger("uvicorn.info")
@@ -80,6 +81,84 @@ def get_digest(
         "views_total": views_total,
         "reactions_total": reactions_total,
         "comments_total": comments_total,
+    }
+
+
+PERIOD_TO_DAYS = {"daily": 1, "weekly": 7, "monthly": 30}
+
+
+def _metric_totals(db: Session, run_id: int) -> dict:
+    views, reactions, comments = db.query(
+        func.coalesce(func.sum(PostMetric.views), 0),
+        func.coalesce(func.sum(PostMetric.reactions), 0),
+        func.coalesce(func.sum(PostMetric.comments), 0),
+    ).filter(PostMetric.run_id == run_id).one()
+    return {"views": int(views), "reactions": int(reactions), "comments": int(comments)}
+
+
+@router.get("/summary")
+def get_summary(
+    period: str = "daily",  # or "default" (since previous batch run), "weekly", "monthly"
+    db: Session = Depends(get_db)
+):
+    """Consolidated report: current totals plus what changed over the period."""
+    latest = db.query(BatchRun).order_by(BatchRun.id.desc()).first()
+    if latest is None:
+        return {"period": period, "available": False}
+
+    if period == "default":
+        reference = (
+            db.query(BatchRun)
+            .filter(BatchRun.id < latest.id)
+            .order_by(BatchRun.id.desc())
+            .first()
+        )
+    else:
+        # Anchored on the latest run rather than wall-clock "now", so a stale
+        # scraper still yields a report for the window ending at its last data.
+        reference = (
+            db.query(BatchRun)
+            .filter(BatchRun.timestamp <= latest.timestamp - timedelta(days=PERIOD_TO_DAYS.get(period, 1)))
+            .order_by(BatchRun.timestamp.desc())
+            .first()
+        )
+    if reference is None:
+        return {"period": period, "available": False}
+
+    totals_now = _metric_totals(db, latest.id)
+    totals_before = _metric_totals(db, reference.id)
+
+    subscribers_now = db.query(func.count(Subscriber.id)).filter(Subscriber.run_id == latest.id).scalar()
+    subscribers_before = db.query(func.count(Subscriber.id)).filter(Subscriber.run_id == reference.id).scalar()
+    changes = get_subscriber_changes(db, reference.timestamp, latest.timestamp)
+
+    new_posts = [
+        {"post_id": row[1], "text": row[0], "views": row[3], "reactions": row[6], "comments": row[9]}
+        for row in get_post_diffs(db, reference.id, latest.id)
+        if row[11] and row[3] is not None  # is_new and has metrics in the latest run
+    ]
+
+    return {
+        "period": period,
+        "available": True,
+        "from": reference.timestamp,
+        "to": latest.timestamp,
+        "posts": {
+            "total": db.query(func.count(Post.id)).scalar(),
+            "new_count": len(new_posts),
+            "new": hydrate_posts(db, new_posts),
+        },
+        "subscribers": {
+            "total": subscribers_now,
+            "change": subscribers_now - subscribers_before,
+            "new_count": len(changes["new"]),
+            "removed_count": len(changes["removed"]),
+            "new": changes["new"],
+            "removed": changes["removed"],
+        },
+        "views": {"total": totals_now["views"], "change": totals_now["views"] - totals_before["views"]},
+        "reactions": {"total": totals_now["reactions"], "change": totals_now["reactions"] - totals_before["reactions"]},
+        "comments": {"total": totals_now["comments"], "change": totals_now["comments"] - totals_before["comments"]},
     }
 
 

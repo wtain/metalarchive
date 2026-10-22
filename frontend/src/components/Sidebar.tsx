@@ -22,6 +22,9 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
         </button>
       </div>
       <nav className="p-4 space-y-3">
+        <Link to="/summary" className="block hover:bg-gray-700 rounded px-3 py-2" onClick={onClose}>
+          Summary
+        </Link>
         <Link to="/subscribers" className="block hover:bg-gray-700 rounded px-3 py-2" onClick={onClose}>
           Subscribers
         </Link>
