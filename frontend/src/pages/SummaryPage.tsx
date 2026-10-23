@@ -4,6 +4,7 @@ import PeriodSelector, { Period } from "../components/PeriodSelector";
 import { Subscriber, Summary } from "../dto/BackendDataTypes";
 import { BasePageProperties } from "@/utils/BasePageProperties";
 import { Link } from "react-router-dom";
+import FreshnessWidget from "../components/FreshnessWidget";
 
 function formatChange(change: number): string {
   return change > 0 ? `+${change}` : `${change}`;
@@ -70,6 +71,7 @@ export default function SummaryPage(props: BasePageProperties) {
   return (
     <div>
       <h1 className="text-2xl font-bold mb-4">Summary</h1>
+      <FreshnessWidget client={client} />
       <PeriodSelector value={period} onChange={setPeriod} />
 
       {data === null && <div className="text-gray-500">Loading...</div>}

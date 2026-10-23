@@ -118,3 +118,7 @@ export interface Summary {
     reactions?: MetricSummary;
     comments?: MetricSummary;
 }
+
+export interface Freshness {
+    as_of: string | null;
+}

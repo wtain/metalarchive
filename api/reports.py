@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends
 from sqlalchemy import func
@@ -84,6 +84,18 @@ def get_digest(
     }
 
 
+def _as_utc(timestamp: datetime) -> datetime:
+    # BatchRun.timestamp is naive UTC (datetime.utcnow); serialize it with an
+    # explicit offset so browsers don't parse it as local time.
+    return timestamp.replace(tzinfo=timezone.utc)
+
+
+@router.get("/freshness")
+def get_freshness(db: Session = Depends(get_db)):
+    latest = db.query(func.max(BatchRun.timestamp)).scalar()
+    return {"as_of": _as_utc(latest) if latest else None}
+
+
 PERIOD_TO_DAYS = {"daily": 1, "weekly": 7, "monthly": 30}
 
 
@@ -141,8 +153,8 @@ def get_summary(
     return {
         "period": period,
         "available": True,
-        "from": reference.timestamp,
-        "to": latest.timestamp,
+        "from": _as_utc(reference.timestamp),
+        "to": _as_utc(latest.timestamp),
         "posts": {
             "total": db.query(func.count(Post.id)).scalar(),
             "new_count": len(new_posts),

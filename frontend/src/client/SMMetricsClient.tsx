@@ -1,6 +1,6 @@
 
 import { ChartDataPoint } from "@/components/ChartCard";
-import { Digest, Post, PostMetricsDataPoint, SimilarPosts, SubscriberChanges, Summary, SubscriberLifecycle, TagCloudEntry, TagData } from "@/dto/BackendDataTypes";
+import { Digest, Freshness, Post, PostMetricsDataPoint, SimilarPosts, SubscriberChanges, Summary, SubscriberLifecycle, TagCloudEntry, TagData } from "@/dto/BackendDataTypes";
 import axios from "axios";
 
 const HEADERS = {
@@ -51,6 +51,12 @@ export class SMMetricsClient {
     async getDigest(period: string): Promise<Digest> {
         const result = await axios
             .get<{ data: Digest }>(`${this.baseUrl}/api/reports/digest?period=${period}`, CONFIG);
+        return result.data;
+    }
+
+    async getFreshness(): Promise<Freshness> {
+        const result = await axios
+            .get<{ data: Freshness }>(`${this.baseUrl}/api/reports/freshness`, CONFIG);
         return result.data;
     }
 

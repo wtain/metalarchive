@@ -54,3 +54,16 @@ def test_summary_without_reference_run_is_unavailable(client, db_session):
     db_session.add(BatchRun(id=1, timestamp=datetime.utcnow()))
     db_session.commit()
     assert client.get("/api/reports/summary?period=weekly").json()["available"] is False
+
+
+def test_freshness_returns_latest_run_as_utc(client, db_session):
+    db_session.add_all([
+        BatchRun(id=1, timestamp=datetime(2026, 1, 1, 10, 0, 0)),
+        BatchRun(id=2, timestamp=datetime(2026, 1, 1, 10, 15, 0)),
+    ])
+    db_session.commit()
+    assert client.get("/api/reports/freshness").json() == {"as_of": "2026-01-01T10:15:00+00:00"}
+
+
+def test_freshness_without_runs(client, db_session):
+    assert client.get("/api/reports/freshness").json() == {"as_of": None}
