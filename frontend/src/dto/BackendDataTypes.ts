@@ -4,6 +4,7 @@ export interface Subscriber {
     username?: string;
     first_name?: string;
     last_name?: string;
+    photo_url?: string | null;
     timestamp: string;
 }
 
@@ -17,6 +18,7 @@ export interface SubscriberLifecycleEntry {
     username?: string;
     first_name?: string;
     last_name?: string;
+    photo_url?: string | null;
     added: string;
     removed: string | null;
     duration_seconds: number;
@@ -121,4 +123,36 @@ export interface Summary {
 
 export interface Freshness {
     as_of: string | null;
+}
+
+export interface SubscriberStint {
+    added: string;
+    removed: string | null;
+    duration_seconds: number;
+}
+
+export interface SubscriberNameRecord {
+    username?: string;
+    first_name?: string;
+    last_name?: string;
+    first_seen: string;
+    last_seen: string;
+}
+
+export interface SubscriberDetails {
+    user_id: number;
+    username?: string;
+    first_name?: string;
+    last_name?: string;
+    photo_url: string | null;
+    status: "subscribed" | "left";
+    first_seen: string;
+    last_seen: string;
+    subscribed_since: string | null;
+    left_at: string | null;
+    stints_count: number;
+    rejoin_count: number;
+    total_subscribed_seconds: number;
+    stints: SubscriberStint[];
+    name_history: SubscriberNameRecord[];
 }

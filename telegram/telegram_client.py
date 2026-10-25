@@ -45,6 +45,16 @@ class TelegramTelethonClient:
             logger.warning(f"Error downloading photo to {file_name}: {e}")
             return None
 
+    async def download_profile_photo(self, user, dest_dir, file_name):
+        """Downloads a user's current profile photo to dest_dir/file_name.
+        Returns file_name on success, or None if there is no photo or it failed."""
+        try:
+            saved = await self.client.download_profile_photo(user, file=os.path.join(dest_dir, file_name))
+            return file_name if saved else None
+        except Exception as e:
+            logger.warning(f"Error downloading profile photo for {file_name}: {e}")
+            return None
+
     async def list_participants(self, channel):
         async for user in self.client.iter_participants(channel):
             yield user

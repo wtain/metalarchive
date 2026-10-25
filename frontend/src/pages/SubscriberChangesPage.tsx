@@ -3,12 +3,14 @@ import PeriodSelector, { Period } from "../components/PeriodSelector";
 import { Subscriber, SubscriberChanges } from "../dto/BackendDataTypes";
 import { BasePageProperties } from "@/utils/BasePageProperties";
 
-function displayName(subscriber: Subscriber): string {
-  const name = [subscriber.first_name, subscriber.last_name].filter(Boolean).join(" ");
-  return name || "(unknown)";
-}
+import SubscriberLabel from "../components/SubscriberLabel";
+import { SMMetricsClient } from "@/client/SMMetricsClient";
 
-function SubscriberTable({ title, rows }: { title: string; rows: Subscriber[] }) {
+// Full refetch on an interval so a freshly scraped batch shows up without a
+// manual reload - data only changes with the ~15min scrape.
+const REFRESH_INTERVAL_MS = 60_000;
+
+function SubscriberTable({ title, rows, client }: { title: string; rows: Subscriber[]; client: SMMetricsClient }) {
   return (
     <div className="mb-8">
       <h2 className="text-lg font-semibold mb-2">{title} ({rows.length})</h2>
@@ -24,7 +26,7 @@ function SubscriberTable({ title, rows }: { title: string; rows: Subscriber[] })
           {rows.map((s) => (
             <tr key={`${s.user_id}-${s.timestamp}`} className="border-b">
               <td className="py-2 pr-4">{s.username ? `@${s.username}` : "(none)"}</td>
-              <td className="py-2 pr-4">{displayName(s)}</td>
+              <td className="py-2 pr-4"><SubscriberLabel subscriber={s} client={client} /></td>
               <td className="py-2 pr-4">{new Date(s.timestamp).toLocaleString()}</td>
             </tr>
           ))}
@@ -46,17 +48,21 @@ export default function SubscriberChangesPage(props: BasePageProperties) {
   const client = props.metricsClient;
 
   useEffect(() => {
-    client
-      .getSubscriberChanges(period)
-      .then((data) => setData(data));
-  }, [period]);
+    const fetchChanges = () => client.getSubscriberChanges(period).then((data) => setData(data));
+    fetchChanges();
+
+    const intervalId = setInterval(() => {
+      if (document.visibilityState === "visible") fetchChanges();
+    }, REFRESH_INTERVAL_MS);
+    return () => clearInterval(intervalId);
+  }, [client, period]);
 
   return (
     <div>
       <h1 className="text-2xl font-bold mb-4">Subscriber Changes</h1>
       <PeriodSelector value={period} onChange={setPeriod} />
-      <SubscriberTable title="New" rows={data.new} />
-      <SubscriberTable title="Unsubscribed" rows={data.removed} />
+      <SubscriberTable title="New" rows={data.new} client={client} />
+      <SubscriberTable title="Unsubscribed" rows={data.removed} client={client} />
     </div>
   );
 }

@@ -1,9 +1,11 @@
 import asyncio
 import logging
+import random
 
 from environment.media import MEDIA_PATH
 from environment.secrets import ENCRYPTION_KEY, TELEGRAM_API_ID, TELEGRAM_API_HASH, TELEGRAM_PHONE
 from storage_client.DatabaseSession import DatabaseSession
+from storage_client.models import SubscriberPhoto
 from telegram.TelegramSession import TelegramSession
 from telegram.rich_message import extract_text as extract_rich_message_text, get_message_photos
 from telegram.telegram_client import TelegramTelethonClient
@@ -80,6 +82,39 @@ async def download_post_images(telegram_client, group, channelName, canonical_me
     return image_names
 
 
+# A first run against a big channel would otherwise download hundreds of
+# avatars in one go and invite Telegram flood limits; the rest catch up over
+# the following polls.
+MAX_SUBSCRIBER_PHOTOS_PER_POLL = 20
+
+
+def pick_subscriber_photos_to_download(users, known_photo_ids, limit):
+    """Users whose current profile photo we don't have yet (never downloaded,
+    or Telegram's photo_id changed), as (user, photo_id) pairs, at most
+    `limit`. Over the limit the pick is random rather than first-N, so a user
+    whose download keeps failing can't permanently crowd out the others."""
+    candidates = []
+    for user in users:
+        photo_id = getattr(user.photo, "photo_id", None)
+        if photo_id is not None and known_photo_ids.get(user.id) != photo_id:
+            candidates.append((user, photo_id))
+    if len(candidates) > limit:
+        candidates = random.sample(candidates, limit)
+    return candidates
+
+
+async def sync_subscriber_photos(telegram_client, session, users, limit=MAX_SUBSCRIBER_PHOTOS_PER_POLL):
+    known_photo_ids = dict(session.query(SubscriberPhoto.user_id, SubscriberPhoto.photo_id).all())
+    downloaded = 0
+    for user, photo_id in pick_subscriber_photos_to_download(users, known_photo_ids, limit):
+        file_name = f"subscriber_{user.id}_{photo_id}.jpg"
+        saved = await telegram_client.download_profile_photo(user, str(MEDIA_PATH), file_name)
+        if saved:
+            session.merge(SubscriberPhoto(user_id=user.id, photo_id=photo_id, file_name=saved))
+            downloaded += 1
+    return downloaded
+
+
 async def poll_from_telegram(session, channelName):
 
     async def export_posts(telegram_client, channel, create_saver):
@@ -147,11 +182,14 @@ async def poll_from_telegram(session, channelName):
                 count += 1
         return count
 
+    subscriber_users = []
+
     async def export_subscribers(telegram_client, channel, create_saver):
         count = 0
         with create_saver() as saver:
             logger.info("Fetching subscribers...")
             async for user in telegram_client.list_participants(channel):
+                subscriber_users.append(user)
                 saver.write_row(
                     user.id,
                     user.username or "",
@@ -177,6 +215,14 @@ async def poll_from_telegram(session, channelName):
                 logger.info(f"Waiting for background tasks to complete")
                 results = await asyncio.gather(f1, f2)
                 logger.info(f"Results {results}")
+
+                # Avatars are cosmetic: a failure here must not fail the poll
+                # and lose the snapshot just taken.
+                try:
+                    photos = await sync_subscriber_photos(telegram_client, session_wrapper.session, subscriber_users)
+                    logger.info(f"Downloaded {photos} subscriber photos")
+                except Exception as e:
+                    logger.warning(f"Subscriber photo sync failed: {e}")
                 return results
         finally:
             # Without this, the client's connection keepalive/update-loop

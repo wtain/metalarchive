@@ -105,6 +105,16 @@ class Subscriber(Base):
     batch_run = relationship("BatchRun", back_populates="subscribers")
 
 
+# Latest downloaded profile photo per subscriber. photo_id is Telegram's id for
+# the photo, so a changed avatar is detected by a differing id and re-downloaded.
+class SubscriberPhoto(Base):
+    __tablename__ = "subscriber_photos"
+    user_id = Column(BigInteger, primary_key=True)
+    photo_id = Column(BigInteger, nullable=False)
+    file_name = Column(String, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+
 class SubscriberLifecycleStint(Base):
     __tablename__ = "subscriber_lifecycle_stints"
     id = Column(Integer, primary_key=True)

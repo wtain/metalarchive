@@ -9,7 +9,8 @@ from sqlalchemy.orm import aliased
 
 from storage_client.db_sync import SessionLocal, engine
 # from storage_client.models import SessionLocal, Subscriber, engine, BatchRun
-from storage_client.models import Subscriber, BatchRun, SubscriberLifecycleStint
+from environment.media import MEDIA_URL_PREFIX
+from storage_client.models import Subscriber, BatchRun, SubscriberLifecycleStint, SubscriberPhoto
 from storage_client.utils import coerce_string
 
 
@@ -103,6 +104,26 @@ def subscribers_count_over_time(period, session):
 # later run's timestamp as the (approximate, +-poll interval) event time. This
 # catches churn (join and leave within the same period) that a start/end
 # endpoint diff would miss.
+def fetch_subscriber_photo_urls(session, user_ids):
+    user_ids = set(user_ids)
+    if not user_ids:
+        return {}
+    rows = (
+        session.query(SubscriberPhoto.user_id, SubscriberPhoto.file_name)
+        .filter(SubscriberPhoto.user_id.in_(user_ids))
+        .all()
+    )
+    return {user_id: f"{MEDIA_URL_PREFIX}/{file_name}" for user_id, file_name in rows}
+
+
+def attach_photo_urls(session, entries):
+    """Adds a `photo_url` (None when we have no photo) to each subscriber dict."""
+    urls = fetch_subscriber_photo_urls(session, (e["user_id"] for e in entries))
+    for entry in entries:
+        entry["photo_url"] = urls.get(entry["user_id"])
+    return entries
+
+
 def get_subscriber_changes(session, start, end):
     seed_run = (
         session.query(BatchRun.id)
@@ -167,6 +188,7 @@ def get_subscriber_changes(session, start, end):
     new_events.sort(key=lambda e: e["timestamp"], reverse=True)
     removed_events.sort(key=lambda e: e["timestamp"], reverse=True)
 
+    attach_photo_urls(session, new_events + removed_events)
     return {"new": new_events, "removed": removed_events}
 
 
@@ -315,5 +337,71 @@ def get_materialized_subscriber_lifecycle(session):
     past = [to_dict(r) for r in rows if r.removed is not None]
     current = [to_dict(r) for r in rows if r.removed is None]
     past.sort(key=lambda e: e["removed"], reverse=True)
+    attach_photo_urls(session, past + current)
 
     return {"past": past, "current": current}
+
+
+def get_subscriber_details(session, user_id):
+    """Everything we know about one subscriber, or None if never seen.
+
+    Stints come from the materialized subscriber_lifecycle_stints table (kept
+    fresh by every poll); the name history walks only this user's snapshots,
+    which user_id's index keeps cheap despite the table's overall size.
+    """
+    stints = (
+        session.query(SubscriberLifecycleStint)
+        .filter(SubscriberLifecycleStint.user_id == user_id)
+        .order_by(SubscriberLifecycleStint.added)
+        .all()
+    )
+
+    identities = (
+        session.query(
+            Subscriber.username,
+            Subscriber.first_name,
+            Subscriber.last_name,
+            func.min(BatchRun.timestamp),
+            func.max(BatchRun.timestamp),
+        )
+        .join(BatchRun, BatchRun.id == Subscriber.run_id)
+        .filter(Subscriber.user_id == user_id)
+        .group_by(Subscriber.username, Subscriber.first_name, Subscriber.last_name)
+        .all()
+    )
+    if not identities:
+        return None
+
+    name_history = sorted(
+        (
+            {"username": u, "first_name": f, "last_name": l, "first_seen": first, "last_seen": last}
+            for u, f, l, first, last in identities
+        ),
+        key=lambda e: e["last_seen"],
+        reverse=True,
+    )
+    latest = name_history[0]
+
+    current_stint = next((st for st in stints if st.removed is None), None)
+    left_stints = [st for st in stints if st.removed is not None]
+
+    return {
+        "user_id": user_id,
+        "username": latest["username"],
+        "first_name": latest["first_name"],
+        "last_name": latest["last_name"],
+        "photo_url": fetch_subscriber_photo_urls(session, [user_id]).get(user_id),
+        "status": "subscribed" if current_stint else "left",
+        "first_seen": min(e["first_seen"] for e in name_history),
+        "last_seen": latest["last_seen"],
+        "subscribed_since": current_stint.added if current_stint else None,
+        "left_at": max((st.removed for st in left_stints), default=None) if not current_stint else None,
+        "stints_count": len(stints),
+        "rejoin_count": max(len(stints) - 1, 0),
+        "total_subscribed_seconds": sum(st.duration_seconds for st in stints),
+        "stints": [
+            {"added": st.added, "removed": st.removed, "duration_seconds": st.duration_seconds}
+            for st in reversed(stints)
+        ],
+        "name_history": name_history,
+    }

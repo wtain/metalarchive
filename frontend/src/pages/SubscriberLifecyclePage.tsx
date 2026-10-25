@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { SubscriberLifecycle, SubscriberLifecycleEntry } from "../dto/BackendDataTypes";
 import { BasePageProperties } from "@/utils/BasePageProperties";
+import SubscriberLabel from "../components/SubscriberLabel";
+import { SMMetricsClient } from "@/client/SMMetricsClient";
 import SubscriberLifecycleDiagram from "../components/SubscriberLifecycleDiagram";
 
 type ViewMode = "table" | "diagram";
@@ -20,7 +22,7 @@ function formatDuration(seconds: number): string {
   return `${minutes}m`;
 }
 
-function PastSubscribersTable({ rows }: { rows: SubscriberLifecycleEntry[] }) {
+function PastSubscribersTable({ rows, client }: { rows: SubscriberLifecycleEntry[]; client: SMMetricsClient }) {
   return (
     <div className="mb-8">
       <h2 className="text-lg font-semibold mb-2">Past Subscribers ({rows.length})</h2>
@@ -38,7 +40,7 @@ function PastSubscribersTable({ rows }: { rows: SubscriberLifecycleEntry[] }) {
           {rows.map((s, i) => (
             <tr key={`${s.user_id}-${s.added}-${i}`} className="border-b">
               <td className="py-2 pr-4">{s.username ? `@${s.username}` : "(none)"}</td>
-              <td className="py-2 pr-4">{displayName(s)}</td>
+              <td className="py-2 pr-4"><SubscriberLabel subscriber={s} client={client} /></td>
               <td className="py-2 pr-4">{new Date(s.added).toLocaleString()}</td>
               <td className="py-2 pr-4">{s.removed ? new Date(s.removed).toLocaleString() : ""}</td>
               <td className="py-2 pr-4">{formatDuration(s.duration_seconds)}</td>
@@ -55,7 +57,7 @@ function PastSubscribersTable({ rows }: { rows: SubscriberLifecycleEntry[] }) {
   );
 }
 
-function CurrentSubscribersTable({ rows }: { rows: SubscriberLifecycleEntry[] }) {
+function CurrentSubscribersTable({ rows, client }: { rows: SubscriberLifecycleEntry[]; client: SMMetricsClient }) {
   return (
     <div className="mb-8">
       <h2 className="text-lg font-semibold mb-2">Current Subscribers ({rows.length})</h2>
@@ -72,7 +74,7 @@ function CurrentSubscribersTable({ rows }: { rows: SubscriberLifecycleEntry[] })
           {rows.map((s) => (
             <tr key={s.user_id} className="border-b">
               <td className="py-2 pr-4">{s.username ? `@${s.username}` : "(none)"}</td>
-              <td className="py-2 pr-4">{displayName(s)}</td>
+              <td className="py-2 pr-4"><SubscriberLabel subscriber={s} client={client} /></td>
               <td className="py-2 pr-4">{new Date(s.added).toLocaleString()}</td>
               <td className="py-2 pr-4">{formatDuration(s.duration_seconds)}</td>
             </tr>
@@ -95,10 +97,15 @@ export default function SubscriberLifecyclePage(props: BasePageProperties) {
   const client = props.metricsClient;
 
   useEffect(() => {
-    client
-      .getSubscriberLifecycle()
-      .then((data) => setData(data));
-  }, []);
+    const fetchLifecycle = () => client.getSubscriberLifecycle().then((data) => setData(data));
+    fetchLifecycle();
+
+    // Re-read periodically so subscribers who left in the latest scrape show up.
+    const intervalId = setInterval(() => {
+      if (document.visibilityState === "visible") fetchLifecycle();
+    }, 60_000);
+    return () => clearInterval(intervalId);
+  }, [client]);
 
   return (
     <div>
@@ -124,8 +131,8 @@ export default function SubscriberLifecyclePage(props: BasePageProperties) {
             view === "table"
               ? (
                 <>
-                  <PastSubscribersTable rows={data.past} />
-                  <CurrentSubscribersTable rows={data.current} />
+                  <PastSubscribersTable rows={data.past} client={client} />
+                  <CurrentSubscribersTable rows={data.current} client={client} />
                 </>
               )
               : <SubscriberLifecycleDiagram entries={[...data.past, ...data.current]} />

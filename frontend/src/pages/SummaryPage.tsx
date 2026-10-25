@@ -4,7 +4,12 @@ import PeriodSelector, { Period } from "../components/PeriodSelector";
 import { Subscriber, Summary } from "../dto/BackendDataTypes";
 import { BasePageProperties } from "@/utils/BasePageProperties";
 import { Link } from "react-router-dom";
+import SubscriberLabel from "../components/SubscriberLabel";
+import { SMMetricsClient } from "@/client/SMMetricsClient";
 import FreshnessWidget from "../components/FreshnessWidget";
+
+// Same cadence as the other pages: data only changes with the ~15min scrape.
+const REFRESH_INTERVAL_MS = 60_000;
 
 function formatChange(change: number): string {
   return change > 0 ? `+${change}` : `${change}`;
@@ -32,12 +37,7 @@ function StatCard({ title, total, change }: { title: string; total: number; chan
   );
 }
 
-function subscriberName(s: Subscriber): string {
-  const name = [s.first_name, s.last_name].filter(Boolean).join(" ") || "(unknown)";
-  return s.username ? `${name} (@${s.username})` : name;
-}
-
-function SubscriberList({ title, rows }: { title: string; rows: Subscriber[] }) {
+function SubscriberList({ title, rows, client }: { title: string; rows: Subscriber[]; client: SMMetricsClient }) {
   return (
     <div>
       <h3 className="font-semibold mb-2">{title} ({rows.length})</h3>
@@ -47,7 +47,7 @@ function SubscriberList({ title, rows }: { title: string; rows: Subscriber[] }) 
         <ul className="space-y-1">
           {rows.map((s) => (
             <li key={`${s.user_id}-${s.timestamp}`} className="flex justify-between gap-4 border-b py-1">
-              <span>{subscriberName(s)}</span>
+              <SubscriberLabel subscriber={s} client={client} />
               <span className="text-gray-500 whitespace-nowrap">{new Date(s.timestamp).toLocaleString()}</span>
             </li>
           ))}
@@ -65,7 +65,14 @@ export default function SummaryPage(props: BasePageProperties) {
 
   useEffect(() => {
     setData(null);
-    client.getSummary(period).then(setData);
+    const fetchSummary = () => client.getSummary(period).then(setData);
+    fetchSummary();
+
+    // Silent refetch (no reset to "Loading...") so new scrapes appear on their own.
+    const intervalId = setInterval(() => {
+      if (document.visibilityState === "visible") fetchSummary();
+    }, REFRESH_INTERVAL_MS);
+    return () => clearInterval(intervalId);
   }, [client, period]);
 
   return (
@@ -95,8 +102,8 @@ export default function SummaryPage(props: BasePageProperties) {
 
           <h2 className="text-lg font-semibold mb-2">Subscribers</h2>
           <div className="grid gap-6 md:grid-cols-2 mb-8">
-            <SubscriberList title="Joined" rows={data.subscribers.new} />
-            <SubscriberList title="Left" rows={data.subscribers.removed} />
+            <SubscriberList title="Joined" rows={data.subscribers.new} client={client} />
+            <SubscriberList title="Left" rows={data.subscribers.removed} client={client} />
           </div>
 
           <h2 className="text-lg font-semibold mb-2">New posts ({data.posts.new_count})</h2>
