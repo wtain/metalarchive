@@ -20,8 +20,8 @@ export default function PostCard({ post, client }: PostCardProps ) {
     const navigate = useNavigate();
 
     return (
-        <Card className={`shadow-md hover:shadow-lg transition ${post.is_new ? "bg-green-50 border-green-400" : ""}`}>
-          <CardHeader>
+        <Card className={`flex flex-col overflow-hidden shadow-md hover:shadow-lg transition ${post.is_new ? "bg-green-50 border-green-400" : ""}`}>
+          <CardHeader className={`p-4 border-b ${post.is_new ? "bg-green-100 border-green-300" : "bg-slate-100 border-slate-200"}`}>
             <CardTitle>
               {post.is_new && <span className="mr-2">🆕✨ NEW</span>}
               {post.post_id}. <EditableTitle postId={post.post_id} initialTitle={post.title ?? "???"} client={client} />
@@ -32,7 +32,7 @@ export default function PostCard({ post, client }: PostCardProps ) {
               </p>
             )}
           </CardHeader>
-          <CardContent>
+          <CardContent className="flex flex-1 flex-col p-4">
             {post.images && post.images.length > 0 && (
               <div className={`grid gap-2 mb-3 ${post.images.length > 1 ? "grid-cols-2" : "grid-cols-1"}`}>
                 {post.images.map((image) => (
@@ -55,7 +55,7 @@ export default function PostCard({ post, client }: PostCardProps ) {
             <div className="text-sm text-black-500 mb-2">
               <PostText text={post.text} maxLength={200} />
             </div>
-            <div className="flex items-center justify-between gap-3 border-t border-gray-200 pt-3">
+            <div className="mt-auto flex items-center justify-between gap-3 border-t border-gray-200 pt-3">
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
                 {(post.views_new ?? post.views) != null &&
                   <MetricDisplay icon={Eye} label="Views" value={post.views_new ?? post.views ?? 0} valueDiff={post.views_diff ?? 0} />}
