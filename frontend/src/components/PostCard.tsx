@@ -50,6 +50,7 @@ export default function PostCard({ post, client }: PostCardProps ) {
               initialTags={post.tags ?? []}
               client={client}
               onClickTag={(name) => navigate(`/search?tag=${encodeURIComponent(name)}`)}
+              maxVisible={4}
             />
             <div className="text-sm text-black-500 mb-2">
               <PostText text={post.text} maxLength={200} />
