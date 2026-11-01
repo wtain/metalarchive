@@ -5,7 +5,7 @@ import { BasePageProperties } from "@/utils/BasePageProperties";
 
 export default function TopPostsPage(props: BasePageProperties) {
 
-    const [posts, setPosts] = useState<Post[]>([]);
+    const [posts, setPosts] = useState<Post[] | null>(null);
 
     const client = props.metricsClient;
 

@@ -3,6 +3,7 @@ import PeriodSelector, { Period } from "../components/PeriodSelector";
 import { Subscriber, SubscriberChanges } from "../dto/BackendDataTypes";
 import { BasePageProperties } from "@/utils/BasePageProperties";
 
+import Spinner from "../components/Spinner";
 import SubscriberLabel from "../components/SubscriberLabel";
 import { SMMetricsClient } from "@/client/SMMetricsClient";
 
@@ -43,11 +44,13 @@ function SubscriberTable({ title, rows, client }: { title: string; rows: Subscri
 
 export default function SubscriberChangesPage(props: BasePageProperties) {
   const [period, setPeriod] = useState<Period>("daily");
-  const [data, setData] = useState<SubscriberChanges>({ new: [], removed: [] });
+  const [data, setData] = useState<SubscriberChanges | null>(null);
 
   const client = props.metricsClient;
 
   useEffect(() => {
+    // Back to the spinner on a period switch only - interval refetches update in place.
+    setData(null);
     const fetchChanges = () => client.getSubscriberChanges(period).then((data) => setData(data));
     fetchChanges();
 
@@ -61,8 +64,14 @@ export default function SubscriberChangesPage(props: BasePageProperties) {
     <div>
       <h1 className="text-2xl font-bold mb-4">Subscriber Changes</h1>
       <PeriodSelector value={period} onChange={setPeriod} />
-      <SubscriberTable title="New" rows={data.new} client={client} />
-      <SubscriberTable title="Unsubscribed" rows={data.removed} client={client} />
+      {data === null ? (
+        <Spinner />
+      ) : (
+        <>
+          <SubscriberTable title="New" rows={data.new} client={client} />
+          <SubscriberTable title="Unsubscribed" rows={data.removed} client={client} />
+        </>
+      )}
     </div>
   );
 }

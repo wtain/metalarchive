@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import Spinner from "../components/Spinner";
 import ChartCard from "../components/ChartCard";
 import { useParams, Link } from "react-router-dom";
 import PostText from "../components/PostText";
@@ -33,7 +34,7 @@ export default function PostDetailsPage(props: BasePageProperties) {
       .then((data) => setSimilar(data));
   }, [id]);
 
-  if (!post || !views) return <p className="p-6 text-gray-500">Loading...</p>;
+  if (!post || !views) return <Spinner />;
 
   return (
     <div>

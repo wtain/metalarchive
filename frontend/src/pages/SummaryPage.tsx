@@ -6,6 +6,7 @@ import { BasePageProperties } from "@/utils/BasePageProperties";
 import { Link } from "react-router-dom";
 import SubscriberLabel from "../components/SubscriberLabel";
 import { SMMetricsClient } from "@/client/SMMetricsClient";
+import Spinner from "../components/Spinner";
 import FreshnessWidget from "../components/FreshnessWidget";
 
 // Same cadence as the other pages: data only changes with the ~15min scrape.
@@ -79,7 +80,7 @@ export default function SummaryPage(props: BasePageProperties) {
       <FreshnessWidget client={client} />
       <PeriodSelector value={period} onChange={setPeriod} />
 
-      {data === null && <div className="text-gray-500">Loading...</div>}
+      {data === null && <Spinner />}
       {data !== null && !data.available && (
         <div className="text-gray-500">Not enough data for this period yet.</div>
       )}

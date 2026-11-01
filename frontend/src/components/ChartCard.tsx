@@ -1,6 +1,7 @@
 import React from "react";
 import Chart from "react-apexcharts";
 import { ApexOptions } from "apexcharts";
+import Spinner from "./Spinner";
 
 export interface ChartDataPoint {
   timestamp: string;
@@ -9,7 +10,8 @@ export interface ChartDataPoint {
 
 interface ChartCardProps {
   title: string;
-  data: ChartDataPoint[];
+  // null while the data is still loading
+  data: ChartDataPoint[] | null;
 }
 
 // The "default" subscriber-count period returns one raw point per batch run
@@ -34,7 +36,7 @@ function downsample(data: ChartDataPoint[], maxPoints: number): ChartDataPoint[]
 }
 
 export default function ChartCard({ title, data }: ChartCardProps) {
-  const displayData = downsample(data, MAX_POINTS);
+  const displayData = downsample(data ?? [], MAX_POINTS);
 
   const series = [
     {
@@ -75,9 +77,11 @@ export default function ChartCard({ title, data }: ChartCardProps) {
   return (
     <div className="bg-white rounded-2xl shadow p-4 mb-6">
       <h2 className="text-xl font-semibold mb-4">{title}</h2>
-      {data.length === 0
-        ? <p className="text-gray-500">No data yet.</p>
-        : <Chart options={options} series={series} type="line" height={300} />
+      {data === null
+        ? <Spinner />
+        : data.length === 0
+          ? <p className="text-gray-500">No data yet.</p>
+          : <Chart options={options} series={series} type="line" height={300} />
       }
     </div>
   );

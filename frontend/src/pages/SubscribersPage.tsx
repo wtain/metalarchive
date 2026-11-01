@@ -5,11 +5,12 @@ import { BasePageProperties } from "@/utils/BasePageProperties";
 
 export default function SubscribersPage(props: BasePageProperties) {
   const [period, setPeriod] = useState<Period>("default");
-  const [data, setData] = useState<ChartDataPoint[]>([]);
+  const [data, setData] = useState<ChartDataPoint[] | null>(null);
 
   const client = props.metricsClient;
 
   useEffect(() => {
+    setData(null);
     client
       .getSubscribersCountHistory(period)
       .then((data) => setData(data));

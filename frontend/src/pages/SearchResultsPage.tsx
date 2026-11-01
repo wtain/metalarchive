@@ -1,3 +1,4 @@
+import Spinner from "../components/Spinner";
 import React, { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import PostList from "../components/PostList";
@@ -21,7 +22,7 @@ export default function SearchResultsPage(props: BasePageProperties) {
     }, [tag]);
 
     if (posts === null) {
-        return <div>Loading...</div>;
+        return <Spinner />;
     }
 
     return (

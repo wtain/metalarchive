@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { SubscriberLifecycle, SubscriberLifecycleEntry } from "../dto/BackendDataTypes";
 import { BasePageProperties } from "@/utils/BasePageProperties";
+import Spinner from "../components/Spinner";
 import SubscriberLabel from "../components/SubscriberLabel";
 import { SMMetricsClient } from "@/client/SMMetricsClient";
 import SubscriberLifecycleDiagram from "../components/SubscriberLifecycleDiagram";
@@ -137,7 +138,7 @@ export default function SubscriberLifecyclePage(props: BasePageProperties) {
               )
               : <SubscriberLifecycleDiagram entries={[...data.past, ...data.current]} />
           )
-          : <p className="text-gray-500">Loading...</p>
+          : <Spinner />
       }
     </div>
   );

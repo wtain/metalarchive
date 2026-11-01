@@ -1,20 +1,23 @@
 
 import { SMMetricsClient } from "@/client/SMMetricsClient";
 import React from "react";
+import Spinner from "./Spinner";
 import PostCard from "../components/PostCard";
 import { Post } from "../dto/BackendDataTypes";
 
 interface PostListProps {
-    posts: Post[];
+    posts: Post[] | null;
     client: SMMetricsClient;
     title?: string | null;
 }
 
 export default function PostList({ posts, client, title = "Posts" }: PostListProps) {
-    if (posts.length == 0) {
-        return (
-            <div>Loading...</div>
-        )
+    if (posts === null) {
+        return <Spinner />
+    }
+
+    if (posts.length === 0) {
+        return <p className="text-gray-500">No posts yet.</p>
     }
 
     return (

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { SubscriberDetails } from "../dto/BackendDataTypes";
 import { BasePageProperties } from "@/utils/BasePageProperties";
+import Spinner from "../components/Spinner";
 import { SubscriberAvatar, subscriberDisplayName } from "../components/SubscriberLabel";
 
 function formatDuration(seconds: number): string {
@@ -50,7 +51,7 @@ export default function SubscriberDetailsPage(props: BasePageProperties) {
   }, [client, id]);
 
   if (notFound) return <p className="text-gray-500">Subscriber not found.</p>;
-  if (!data) return <p className="text-gray-500">Loading...</p>;
+  if (!data) return <Spinner />;
 
   const subscribed = data.status === "subscribed";
 

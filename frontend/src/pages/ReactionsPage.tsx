@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import PeriodSelector, { Period } from "../components/PeriodSelector";
+import Spinner from "../components/Spinner";
 import PostCard from "../components/PostCard";
 import { Digest } from "../dto/BackendDataTypes";
 import { BasePageProperties } from "@/utils/BasePageProperties";
@@ -12,7 +13,7 @@ const REFRESH_INTERVAL_MS = 60_000;
 
 export default function ReactionsPage(props: BasePageProperties) {
   const [period, setPeriod] = useState<Period>("daily");
-  const [data, setData] = useState<Digest>({posts: []});
+  const [data, setData] = useState<Digest | null>(null);
 
   const client = props.metricsClient;
 
@@ -23,6 +24,8 @@ export default function ReactionsPage(props: BasePageProperties) {
   }, [client, period]);
 
   useEffect(() => {
+    // Spinner again on a period switch; the interval refetches update in place.
+    setData(null);
     fetchDigest();
 
     const intervalId = setInterval(() => {
@@ -48,6 +51,7 @@ export default function ReactionsPage(props: BasePageProperties) {
     <div>
       <h1 className="text-2xl font-bold mb-4">Reactions</h1>
       <PeriodSelector value={period} onChange={setPeriod} />
+      {data === null ? <Spinner /> : (<>
       <Card className="shadow-md hover:shadow-lg transition">
           <CardHeader>
             <CardTitle>Statistics: {period}</CardTitle>
@@ -65,6 +69,7 @@ export default function ReactionsPage(props: BasePageProperties) {
           )
       }
       </main>
+      </>)}
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import Spinner from "../components/Spinner";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Tag from "../components/Tag";
@@ -29,7 +30,7 @@ export default function TagsCloudPage(props: BasePageProperties) {
     }, []);
 
     if (tags === null) {
-        return <div>Loading...</div>;
+        return <Spinner />;
     }
 
     if (tags.length === 0) {
