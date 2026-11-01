@@ -22,15 +22,16 @@ export default function PostCard({ post, client }: PostCardProps ) {
     return (
         <Card className={`flex flex-col overflow-hidden shadow-md hover:shadow-lg transition ${post.is_new ? "bg-green-50 border-green-400" : ""}`}>
           <CardHeader className={`p-4 border-b ${post.is_new ? "bg-green-100 border-green-300" : "bg-slate-100 border-slate-200"}`}>
-            <CardTitle>
-              {post.is_new && <span className="mr-2">🆕✨ NEW</span>}
-              {post.post_id}. <EditableTitle postId={post.post_id} initialTitle={post.title ?? "???"} client={client} />
+            {/* Fixed two-line title slot (longer titles are clamped, full text on hover/click-to-edit),
+                so every header in a card list has the same height. */}
+            <CardTitle className="flex min-h-[2lh] gap-1.5 leading-snug">
+              <span className="shrink-0">{post.post_id}.</span>
+              <EditableTitle postId={post.post_id} initialTitle={post.title ?? "???"} client={client} titleClassName="line-clamp-2" />
             </CardTitle>
-            {post.published_at && (
-              <p className="text-xs text-gray-500">
-                Published {new Date(post.published_at).toLocaleString()}
-              </p>
-            )}
+            <div className="flex items-center justify-between gap-2 text-xs text-gray-500">
+              <span>{post.published_at && `Published ${new Date(post.published_at).toLocaleString()}`}</span>
+              {post.is_new && <span className="font-medium text-green-700">🆕 NEW</span>}
+            </div>
           </CardHeader>
           <CardContent className="flex flex-1 flex-col p-4">
             {post.images && post.images.length > 0 && (

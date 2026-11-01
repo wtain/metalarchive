@@ -7,6 +7,8 @@ interface EditableTitleProps {
   postId: number;
   initialTitle: string;
   client: SMMetricsClient;
+  // Applied to the read-only title, e.g. "line-clamp-2" to keep list cards uniform.
+  titleClassName?: string;
 }
 
 // todo: to utils
@@ -22,7 +24,7 @@ const useFocus = () => {
     return [ htmlElRef, setFocus ] 
 }
 
-export default function EditableTitle({ postId, initialTitle, client }: EditableTitleProps) {
+export default function EditableTitle({ postId, initialTitle, client, titleClassName }: EditableTitleProps) {
   const [title, setTitle] = useState<string>(initialTitle);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -51,7 +53,7 @@ export default function EditableTitle({ postId, initialTitle, client }: Editable
   };
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex min-w-0 items-center gap-2">
         {isEdit ? 
             <div>
                 <Input
@@ -75,7 +77,7 @@ export default function EditableTitle({ postId, initialTitle, client }: Editable
                 </Button>
             </div>
             : 
-            <div onClick={() => {
+            <div className={titleClassName} title={title} onClick={() => {
                     // console.log(title);
                     setIsEdit(true);
                 }}>
