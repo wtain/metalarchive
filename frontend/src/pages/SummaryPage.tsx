@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
+import { Card } from "../components/ui/card";
 import PeriodSelector, { Period } from "../components/PeriodSelector";
 import { Subscriber, Summary } from "../dto/BackendDataTypes";
 import { BasePageProperties } from "@/utils/BasePageProperties";
@@ -23,16 +23,14 @@ function changeColor(change: number): string {
 
 function StatCard({ title, total, change }: { title: string; total: number; change?: number }) {
   return (
-    <Card className="shadow-md">
-      <CardHeader>
-        <CardTitle className="text-sm font-medium text-gray-500">{title}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="text-3xl font-bold">{total.toLocaleString()}</div>
+    <Card className="shadow-sm px-3 py-2">
+      <div className="text-xs text-gray-500">{title}</div>
+      <div className="flex items-baseline gap-2">
+        <span className="text-xl font-bold leading-tight">{total.toLocaleString()}</span>
         {change !== undefined && (
-          <div className={`text-sm ${changeColor(change)}`}>{formatChange(change)}</div>
+          <span className={`text-sm ${changeColor(change)}`}>{formatChange(change)}</span>
         )}
-      </CardContent>
+      </div>
     </Card>
   );
 }
@@ -92,7 +90,7 @@ export default function SummaryPage(props: BasePageProperties) {
             {new Date(data.from!).toLocaleString()} → {new Date(data.to!).toLocaleString()}
           </div>
 
-          <div className="grid gap-4 grid-cols-2 lg:grid-cols-3 mb-8">
+          <div className="grid gap-2 grid-cols-[repeat(auto-fill,minmax(8.5rem,1fr))] mb-6">
             <StatCard title="Subscribers" total={data.subscribers.total} change={data.subscribers.change} />
             <StatCard title="Posts" total={data.posts.total} change={data.posts.new_count} />
             <StatCard title="Views" total={data.views.total} change={data.views.change} />

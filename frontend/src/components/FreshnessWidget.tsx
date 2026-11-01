@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Card, CardContent } from "./ui/card";
+import { Card } from "./ui/card";
 import { SMMetricsClient } from "@/client/SMMetricsClient";
 
 const REFRESH_INTERVAL_MS = 60_000;
@@ -39,13 +39,13 @@ export default function FreshnessWidget({ client }: { client: SMMetricsClient })
   const stale = minutes > STALE_AFTER_MINUTES;
 
   return (
-    <Card className={`shadow-md mb-6 ${stale ? "border-amber-400 bg-amber-50" : ""}`}>
-      <CardContent className="pt-6">
-        <div className={`text-2xl font-bold ${stale ? "text-amber-700" : "text-green-700"}`}>
+    <Card className={`shadow-sm px-3 py-2 mb-3 ${stale ? "border-amber-400 bg-amber-50" : ""}`}>
+      <div className="flex flex-wrap items-baseline gap-x-3">
+        <span className={`text-lg font-bold ${stale ? "text-amber-700" : "text-green-700"}`}>
           Refreshed {formatAge(minutes)}
-        </div>
-        <div className="text-xs text-gray-500">Data as of {asOf.toLocaleString()}</div>
-      </CardContent>
+        </span>
+        <span className="text-xs text-gray-500">Data as of {asOf.toLocaleString()}</span>
+      </div>
     </Card>
   );
 }
