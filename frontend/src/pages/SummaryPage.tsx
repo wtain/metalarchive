@@ -112,9 +112,16 @@ export default function SummaryPage(props: BasePageProperties) {
             <ul className="space-y-1">
               {data.posts.new.map((post) => (
                 <li key={post.post_id} className="border-b py-1 flex justify-between gap-4">
-                  <Link to={`/posts/${post.post_id}`} className="text-blue-600 hover:underline">
-                    {post.post_id}. {post.title ?? "???"}
-                  </Link>
+                  <div className="flex flex-wrap items-baseline gap-x-3">
+                    <Link to={`/posts/${post.post_id}`} className="text-blue-600 hover:underline">
+                      {post.post_id}. {post.title ?? "???"}
+                    </Link>
+                    {post.published_at && (
+                      <span className="text-xs text-gray-500 whitespace-nowrap">
+                        {new Date(post.published_at).toLocaleString()}
+                      </span>
+                    )}
+                  </div>
                   <span className="text-gray-500 whitespace-nowrap">
                     {post.views} views · {post.reactions} reactions · {post.comments} comments
                   </span>
