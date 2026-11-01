@@ -20,7 +20,7 @@ export default function SubscribersPage(props: BasePageProperties) {
     <div>
       <h1 className="text-2xl font-bold mb-4">Subscribers</h1>
       <PeriodSelector value={period} onChange={setPeriod} />
-      <ChartCard title={`Subscribers (${period})`} data={data} />
+      <ChartCard title={`Subscribers (${period})`} data={data} period={period} />
     </div>
   );
 }

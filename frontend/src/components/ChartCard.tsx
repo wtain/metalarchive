@@ -2,6 +2,7 @@ import React from "react";
 import Chart from "react-apexcharts";
 import { ApexOptions } from "apexcharts";
 import Spinner from "./Spinner";
+import { formatAxisLabel, formatTooltipLabel, isShortRange } from "../utils/chartTimeLabels";
 
 export interface ChartDataPoint {
   timestamp: string;
@@ -12,6 +13,9 @@ interface ChartCardProps {
   title: string;
   // null while the data is still loading
   data: ChartDataPoint[] | null;
+  // Backend period of the series ("weekly" / "monthly" labels are ambiguous
+  // without it - see utils/chartTimeLabels.ts).
+  period?: string;
 }
 
 // The "default" subscriber-count period returns one raw point per batch run
@@ -35,8 +39,10 @@ function downsample(data: ChartDataPoint[], maxPoints: number): ChartDataPoint[]
   return result;
 }
 
-export default function ChartCard({ title, data }: ChartCardProps) {
+export default function ChartCard({ title, data, period }: ChartCardProps) {
   const displayData = downsample(data ?? [], MAX_POINTS);
+  const labels = displayData.map((d) => d.timestamp);
+  const showTime = isShortRange(labels, period);
 
   const series = [
     {
@@ -63,7 +69,24 @@ export default function ChartCard({ title, data }: ChartCardProps) {
     // recharts rendering - rather than risk misparsing those.
     xaxis: {
       type: "category",
-      categories: displayData.map((d) => d.timestamp),
+      categories: labels,
+      labels: {
+        // Apex also calls this with non-string values while parsing categories.
+        formatter: (value: unknown) =>
+          typeof value === "string" ? formatAxisLabel(value, { period, showTime }) : String(value ?? ""),
+        rotate: 0,
+        hideOverlappingLabels: true,
+      },
+      // ~8 labels is plenty for short "Nov 1" style text; Apex otherwise
+      // tries to label every category and crams them.
+      tickAmount: 8,
+    },
+    tooltip: {
+      x: { formatter: (value: unknown, opts?: { dataPointIndex?: number }) => {
+          const raw = labels[opts?.dataPointIndex ?? -1] ?? value
+          return typeof raw === "string" ? formatTooltipLabel(raw, period) : String(raw ?? "")
+        },
+      },
     },
     stroke: {
       curve: "smooth",

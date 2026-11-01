@@ -122,3 +122,17 @@ def test_sync_stores_photos_replaces_changed_ones_and_skips_failures(db_session)
     assert downloaded == 2
     rows = {p.user_id: (p.photo_id, p.file_name) for p in db_session.query(SubscriberPhoto).all()}
     assert rows == {1: (11, "subscriber_1_11.jpg"), 2: (20, "subscriber_2_20.jpg")}
+
+
+def test_weekly_count_over_time_labels_use_iso_year(client, db_session):
+    # 2025-12-29 is a Monday and belongs to ISO week 1 of 2026.
+    db_session.add_all([
+        BatchRun(id=1, timestamp=datetime(2025, 12, 22, 12, 0)),
+        BatchRun(id=2, timestamp=datetime(2025, 12, 29, 12, 0)),
+    ])
+    db_session.add_all([Subscriber(user_id=1, run_id=1), Subscriber(user_id=1, run_id=2)])
+    db_session.commit()
+
+    data = client.get("/api/subscribers/count-over-time?period=weekly").json()["data"]
+
+    assert [point["timestamp"] for point in data] == ["2025-52", "2026-01"]

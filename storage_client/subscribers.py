@@ -85,7 +85,9 @@ def subscribers_count_over_time(period, session):
             .group_by(BatchRun.timestamp, BatchRun.id)
         ).subquery()
 
-        format_period = {'daily': 'YYYY-MM-DD', 'weekly': 'YYYY-IW', 'monthly': 'YYYY-MM'}[period]
+        # IYYY (ISO year), not YYYY: days at a year boundary belong to the ISO
+        # week of the neighbouring year (2025-12-29 is week 1 of 2026).
+        format_period = {'daily': 'YYYY-MM-DD', 'weekly': 'IYYY-IW', 'monthly': 'YYYY-MM'}[period]
         group_by_expression = func.to_char(inner.c.timestamp, format_period).label("period")
         q = (
             session.query(
