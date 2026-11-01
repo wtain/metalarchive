@@ -2,51 +2,44 @@ import { Link } from "react-router-dom"
 
 type SidebarProps = {
   open: boolean
-  onClose: () => void
 }
 
-export default function Sidebar({ open, onClose }: SidebarProps) {
+// Docked column (not an overlay): when open it takes its own width, so page
+// content sits beside it. Toggled by the floating button in App.
+export default function Sidebar({ open }: SidebarProps) {
+  if (!open) return null
+
   return (
-    <div
-      className={`fixed top-0 left-0 h-full bg-gray-800 text-white w-64 transform ${
-        open ? "translate-x-0" : "-translate-x-full"
-      } transition-transform duration-300 ease-in-out z-50`}
-    >
-      <div className="p-4 flex justify-between items-center border-b border-gray-700">
+    <aside className="sticky top-0 h-screen w-64 shrink-0 overflow-y-auto bg-gray-800 text-white">
+      <div className="p-4 pl-16 flex items-center border-b border-gray-700 h-[3.75rem]">
         <h2 className="text-xl font-semibold">Menu</h2>
-        <button
-          onClick={onClose}
-          className="text-gray-400 hover:text-white focus:outline-none"
-        >
-          ✕
-        </button>
       </div>
       <nav className="p-4 space-y-3">
-        <Link to="/summary" className="block hover:bg-gray-700 rounded px-3 py-2" onClick={onClose}>
+        <Link to="/summary" className="block hover:bg-gray-700 rounded px-3 py-2">
           Summary
         </Link>
-        <Link to="/subscribers" className="block hover:bg-gray-700 rounded px-3 py-2" onClick={onClose}>
+        <Link to="/subscribers" className="block hover:bg-gray-700 rounded px-3 py-2">
           Subscribers
         </Link>
-        <Link to="/subscriber-changes" className="block hover:bg-gray-700 rounded px-3 py-2" onClick={onClose}>
+        <Link to="/subscriber-changes" className="block hover:bg-gray-700 rounded px-3 py-2">
           Subscriber Changes
         </Link>
-        <Link to="/subscriber-lifecycle" className="block hover:bg-gray-700 rounded px-3 py-2" onClick={onClose}>
+        <Link to="/subscriber-lifecycle" className="block hover:bg-gray-700 rounded px-3 py-2">
           Subscriber Lifecycle
         </Link>
-        <Link to="/reactions" className="block hover:bg-gray-700 rounded px-3 py-2" onClick={onClose}>
+        <Link to="/reactions" className="block hover:bg-gray-700 rounded px-3 py-2">
           Reactions
         </Link>
-        <Link to="/posts" className="block hover:bg-gray-700 rounded px-3 py-2" onClick={onClose}>
+        <Link to="/posts" className="block hover:bg-gray-700 rounded px-3 py-2">
           Posts
         </Link>
-        <Link to="/tags" className="block hover:bg-gray-700 rounded px-3 py-2" onClick={onClose}>
+        <Link to="/tags" className="block hover:bg-gray-700 rounded px-3 py-2">
           Tags
         </Link>
-        <Link to="/top" className="block hover:bg-gray-700 rounded px-3 py-2" onClick={onClose}>
+        <Link to="/top" className="block hover:bg-gray-700 rounded px-3 py-2">
           Top
         </Link>
       </nav>
-    </div>
+    </aside>
   )
 }
