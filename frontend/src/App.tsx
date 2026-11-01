@@ -30,9 +30,7 @@ function App() {
       <button
         onClick={() => setSidebarOpen((open) => !open)}
         aria-label={sidebarOpen ? "Hide menu" : "Show menu"}
-        className={`fixed top-3 left-4 z-50 rounded-md p-2 focus:outline-none ${
-          sidebarOpen ? "text-gray-300 hover:text-white hover:bg-gray-700" : "text-gray-600 hover:text-indigo-600 hover:bg-gray-100"
-        }`}
+        className="fixed top-3 left-4 z-50 rounded-md p-2 text-gray-600 hover:text-indigo-600 hover:bg-gray-100 focus:outline-none"
       >
         <Menu size={24} />
       </button>

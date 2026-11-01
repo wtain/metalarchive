@@ -34,7 +34,8 @@ export function SubscriberAvatar({
     );
   }
   // No photo (none set, or not downloaded yet): first letter on a neutral disc.
-  const initial = (subscriberDisplayName(subscriber).replace("(", "")[0] ?? "?").toUpperCase();
+  // Array.from splits by code point, so emoji/math-alphabet names aren't cut mid surrogate pair.
+  const initial = (Array.from(subscriberDisplayName(subscriber).replace("(", ""))[0] ?? "?").toUpperCase();
   return (
     <span className={`${className} rounded-full bg-gray-200 text-gray-600 inline-flex items-center justify-center shrink-0`}>
       {initial}

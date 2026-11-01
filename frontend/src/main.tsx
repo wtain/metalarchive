@@ -1,6 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import App from "./App";
 import SubscribersPage from "./pages/SubscribersPage";
 import ReactionsPage from "./pages/ReactionsPage";
@@ -23,9 +23,10 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     <BrowserRouter>
         <Routes>
           <Route path="/" element={<App />}>
-            <Route path="summary" element={<SummaryPage metricsClient={client} />} />
+            <Route index element={<SummaryPage metricsClient={client} />} />
+            <Route path="summary" element={<Navigate to="/" replace />} />
             <Route path="reactions" element={<ReactionsPage metricsClient={client} />} />
-            <Route index path="subscribers" element={<SubscribersPage metricsClient={client} />} />
+            <Route path="subscribers" element={<SubscribersPage metricsClient={client} />} />
             <Route path="subscribers/:id" element={<SubscriberDetailsPage metricsClient={client} />} />
             <Route path="subscriber-changes" element={<SubscriberChangesPage metricsClient={client} />} />
             <Route path="subscriber-lifecycle" element={<SubscriberLifecyclePage metricsClient={client} />} />
