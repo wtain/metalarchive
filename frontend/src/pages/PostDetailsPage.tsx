@@ -39,7 +39,12 @@ export default function PostDetailsPage(props: BasePageProperties) {
   return (
     <div>
       <Link to="/reactions">Back to posts</Link>
-      <h1 className="text-2xl font-bold mb-4">Post</h1>
+      <h1 className="text-2xl font-bold">Post</h1>
+      {post.published_at && (
+        <p className="text-sm text-gray-500 mb-4">
+          Published {new Date(post.published_at).toLocaleString()}
+        </p>
+      )}
       <ChartCard title={`Post ${id}`} data={views.map((v) => {
         return { timestamp: v.timestamp, count: v.views };
       })} />
