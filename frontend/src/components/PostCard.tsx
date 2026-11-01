@@ -1,13 +1,13 @@
 
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
-import { Button } from "@/components/ui/button"
+import { Eye, Heart, MessageCircle } from "lucide-react";
 import EditableTitle from "../components/EditableTitle"
 import EditableTagList from "../components/EditableTagList"
 import MetricDisplay from "../components/MetricDisplay"
 import PostText from "../components/PostText"
 import { PostChange } from "../dto/BackendDataTypes";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { SMMetricsClient } from "@/client/SMMetricsClient";
 
 interface PostCardProps {
@@ -55,32 +55,19 @@ export default function PostCard({ post, client }: PostCardProps ) {
             <div className="text-sm text-black-500 mb-2">
               <PostText text={post.text} maxLength={200} />
             </div>
-            {
-              (post.views_new ?? post.views) != null &&
-                <div>
-                  <p className="text-sm font-bold text-gray-500 mb-2">Views</p>
-                  <MetricDisplay value={post.views_new ?? post.views ?? 0} valueDiff={post.views_diff ?? 0} />
-                </div>
-            }
-            {
-              (post.reactions_new ?? post.reactions) != null &&
-                <div>
-                  <p className="text-sm font-bold text-gray-500 mb-2">Reactions</p>
-                  <MetricDisplay value={post.reactions_new ?? post.reactions ?? 0} valueDiff={post.reactions_diff ?? 0} />
-                </div>
-            }
-            {
-              (post.comments_new ?? post.comments) != null &&
-                <div>
-                  <p className="text-sm font-bold text-gray-500 mb-2">Comments</p>
-                  <MetricDisplay value={post.comments_new ?? post.comments ?? 0} valueDiff={post.comments_diff ?? 0} />
-                </div>
-            }
-            <Button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white" onClick={
-            () => {
-                navigate(`/posts/${post.post_id}`);
-            }
-            }>View Details</Button>
+            <div className="flex items-center justify-between gap-3 border-t border-gray-200 pt-3">
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                {(post.views_new ?? post.views) != null &&
+                  <MetricDisplay icon={Eye} label="Views" value={post.views_new ?? post.views ?? 0} valueDiff={post.views_diff ?? 0} />}
+                {(post.reactions_new ?? post.reactions) != null &&
+                  <MetricDisplay icon={Heart} label="Reactions" value={post.reactions_new ?? post.reactions ?? 0} valueDiff={post.reactions_diff ?? 0} />}
+                {(post.comments_new ?? post.comments) != null &&
+                  <MetricDisplay icon={MessageCircle} label="Comments" value={post.comments_new ?? post.comments ?? 0} valueDiff={post.comments_diff ?? 0} />}
+              </div>
+              <Link to={`/posts/${post.post_id}`} className="text-sm text-indigo-600 hover:underline whitespace-nowrap">
+                Details →
+              </Link>
+            </div>
           </CardContent>
         </Card>
     )
