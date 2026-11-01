@@ -1,5 +1,8 @@
 import json
 from collections import defaultdict
+from datetime import timezone
+
+from sqlalchemy import func
 
 from environment.media import MEDIA_URL_PREFIX
 from storage_client.db_sync import SessionLocal, engine
@@ -54,8 +57,27 @@ def fetch_images(session, post_ids):
     return images_by_post
 
 
+# PostMetric.timestamp is the Telegram message date (naive UTC), repeated on
+# every batch's row, so the earliest one is the publication time. Post.created_at
+# is only when we first scraped the post.
+def fetch_published_at(session, post_ids):
+    if not post_ids:
+        return {}
+    rows = (
+        session.query(PostMetric.post_id, func.min(PostMetric.timestamp))
+        .filter(PostMetric.post_id.in_(post_ids))
+        .group_by(PostMetric.post_id)
+        .all()
+    )
+    return {
+        post_id: timestamp.replace(tzinfo=timezone.utc) if timestamp else None
+        for post_id, timestamp in rows
+    }
+
+
 def hydrate_posts(session, posts):
     post_ids = [post["post_id"] for post in posts]
+    published_at = fetch_published_at(session, post_ids)
     details = fetch_titles_and_tags(session, post_ids)
     images_by_post = fetch_images(session, post_ids)
     for post in posts:
@@ -63,6 +85,7 @@ def hydrate_posts(session, posts):
         post["title"] = info["title"]
         post["tags"] = info["tags"]
         post["images"] = images_by_post.get(post["post_id"], [])
+        post["published_at"] = published_at.get(post["post_id"])
     return posts
 
 

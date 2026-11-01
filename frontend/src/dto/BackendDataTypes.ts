@@ -54,6 +54,7 @@ export interface Post {
     title?: string;
     tags?: TagData[];
     images?: PostImage[];
+    published_at?: string | null;
 }
 
 export interface PostMetricsDataPoint {

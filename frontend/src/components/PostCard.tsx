@@ -26,6 +26,11 @@ export default function PostCard({ post, client }: PostCardProps ) {
               {post.is_new && <span className="mr-2">🆕✨ NEW</span>}
               {post.post_id}. <EditableTitle postId={post.post_id} initialTitle={post.title ?? "???"} client={client} />
             </CardTitle>
+            {post.published_at && (
+              <p className="text-xs text-gray-500">
+                Published {new Date(post.published_at).toLocaleString()}
+              </p>
+            )}
           </CardHeader>
           <CardContent>
             {post.images && post.images.length > 0 && (

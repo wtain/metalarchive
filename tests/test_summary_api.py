@@ -43,6 +43,18 @@ def test_summary_totals_and_changes(client, db_session):
     assert data["comments"] == {"total": 2, "change": 2}
 
 
+def test_summary_new_posts_include_published_at(client, db_session):
+    _seed(db_session)
+    published = datetime(2026, 1, 1, 9, 30, 0)
+    for metric in db_session.query(PostMetric).filter(PostMetric.post_id == 2):
+        metric.timestamp = published
+    db_session.commit()
+
+    new_post = client.get("/api/reports/summary?period=daily").json()["posts"]["new"][0]
+
+    assert new_post["published_at"] == "2026-01-01T09:30:00+00:00"
+
+
 def test_summary_default_period_uses_previous_run(client, db_session):
     _seed(db_session)
     data = client.get("/api/reports/summary?period=default").json()
