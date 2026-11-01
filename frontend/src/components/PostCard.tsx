@@ -24,7 +24,7 @@ export default function PostCard({ post, client }: PostCardProps ) {
           <CardHeader className={`p-4 border-b ${post.is_new ? "bg-green-100 border-green-300" : "bg-slate-100 border-slate-200"}`}>
             {/* Fixed two-line title slot (longer titles are clamped, full text on hover/click-to-edit),
                 so every header in a card list has the same height. */}
-            <CardTitle className="flex min-h-[2lh] gap-1.5 leading-snug">
+            <CardTitle className="flex min-h-[2lh] items-center gap-1.5 leading-snug">
               <span className="shrink-0">{post.post_id}.</span>
               <EditableTitle postId={post.post_id} initialTitle={post.title ?? "???"} client={client} titleClassName="line-clamp-2" />
             </CardTitle>
