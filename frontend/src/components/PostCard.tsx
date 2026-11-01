@@ -34,14 +34,22 @@ export default function PostCard({ post, client }: PostCardProps ) {
           </CardHeader>
           <CardContent className="flex flex-1 flex-col p-4">
             {post.images && post.images.length > 0 && (
+              // At most two thumbnails side by side (one fixed-height row), so
+              // a post with many images doesn't stretch the whole grid row.
               <div className={`grid gap-2 mb-3 ${post.images.length > 1 ? "grid-cols-2" : "grid-cols-1"}`}>
-                {post.images.map((image) => (
-                  <img
-                    key={image.id}
-                    src={`${client.baseUrl}${image.url}`}
-                    alt=""
-                    className="w-full h-40 object-cover rounded-md"
-                  />
+                {post.images.slice(0, 2).map((image, index) => (
+                  <div key={image.id} className="relative">
+                    <img
+                      src={`${client.baseUrl}${image.url}`}
+                      alt=""
+                      className="w-full h-40 object-cover rounded-md"
+                    />
+                    {index === 1 && post.images!.length > 2 && (
+                      <span className="absolute inset-0 flex items-center justify-center rounded-md bg-black/50 text-lg font-medium text-white">
+                        +{post.images!.length - 2}
+                      </span>
+                    )}
+                  </div>
                 ))}
               </div>
             )}
