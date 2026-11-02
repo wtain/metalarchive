@@ -2,7 +2,7 @@
 import { SMMetricsClient } from "@/client/SMMetricsClient";
 import React from "react";
 import Spinner from "./Spinner";
-import PostCard from "../components/PostCard";
+import PostGrid from "./PostGrid";
 import { Post } from "../dto/BackendDataTypes";
 
 interface PostListProps {
@@ -23,13 +23,7 @@ export default function PostList({ posts, client, title = "Posts" }: PostListPro
     return (
         <div>
             {title && <h1 className="text-2xl font-bold mb-4">{title}</h1>}
-            <main className="flex-1 container mx-auto p-6 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {
-                  posts.map(post =>
-                    <PostCard post={post} key={post.post_id} client={client} />
-                  )
-              }
-            </main>
+            <PostGrid posts={posts} client={client} />
         </div>
     )
 }

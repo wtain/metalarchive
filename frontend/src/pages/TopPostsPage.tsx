@@ -16,6 +16,6 @@ export default function TopPostsPage(props: BasePageProperties) {
     }, []);
 
     return (
-        <PostList posts={posts} client={client} />
+        <PostList posts={posts} client={client} title="Top posts" />
     )
 }

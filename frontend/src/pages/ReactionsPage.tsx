@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import PeriodSelector, { Period } from "../components/PeriodSelector";
 import Spinner from "../components/Spinner";
-import PostCard from "../components/PostCard";
+import PostGrid from "../components/PostGrid";
+import PostMetrics from "../components/PostMetrics";
 import { Digest } from "../dto/BackendDataTypes";
 import { BasePageProperties } from "@/utils/BasePageProperties";
 
@@ -52,23 +52,16 @@ export default function ReactionsPage(props: BasePageProperties) {
       <h1 className="text-2xl font-bold mb-4">Reactions</h1>
       <PeriodSelector value={period} onChange={setPeriod} />
       {data === null ? <Spinner /> : (<>
-      <Card className="shadow-md hover:shadow-lg transition">
-          <CardHeader>
-            <CardTitle>Statistics: {period}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div>Views: {data.views_total}</div>
-            <div>Reactions: {data.reactions_total}</div>
-            <div>Comments: {data.comments_total}</div>
-          </CardContent>
-      </Card>
-      <main className="flex-1 container mx-auto p-6 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-      {
-          data.posts.map(post =>
-            <PostCard post={post} key={post.post_id} client={client} />
-          )
-      }
-      </main>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-2 text-sm text-gray-500">
+        <span>Gained over the {period} period:</span>
+        <PostMetrics
+          signed
+          views={{ value: data.views_total }}
+          reactions={{ value: data.reactions_total }}
+          comments={{ value: data.comments_total }}
+        />
+      </div>
+      <PostGrid posts={data.posts} client={client} />
       </>)}
     </div>
   );
