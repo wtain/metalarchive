@@ -3,6 +3,7 @@ import Spinner from "../components/Spinner";
 import ChartCard from "../components/ChartCard";
 import { useParams, Link } from "react-router-dom";
 import PostText from "../components/PostText";
+import EditableTitle from "../components/EditableTitle";
 import { Post, PostMetricsDataPoint, SimilarPosts } from "@/dto/BackendDataTypes";
 import { BasePageProperties } from "@/utils/BasePageProperties";
 
@@ -39,7 +40,10 @@ export default function PostDetailsPage(props: BasePageProperties) {
   return (
     <div>
       <Link to="/reactions">Back to posts</Link>
-      <h1 className="text-2xl font-bold">Post</h1>
+      <h1 className="flex gap-2 text-2xl font-bold">
+        <span className="shrink-0">{post.post_id}.</span>
+        <EditableTitle postId={post.post_id} initialTitle={post.title ?? "???"} client={client} />
+      </h1>
       {post.published_at && (
         <p className="text-sm text-gray-500 mb-4">
           Published {new Date(post.published_at).toLocaleString()}
