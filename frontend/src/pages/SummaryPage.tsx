@@ -8,6 +8,7 @@ import SubscriberLabel from "../components/SubscriberLabel";
 import { SMMetricsClient } from "@/client/SMMetricsClient";
 import Spinner from "../components/Spinner";
 import FreshnessWidget from "../components/FreshnessWidget";
+import LastPostWidget from "../components/LastPostWidget";
 
 // Same cadence as the other pages: data only changes with the ~15min scrape.
 const REFRESH_INTERVAL_MS = 60_000;
@@ -77,7 +78,10 @@ export default function SummaryPage(props: BasePageProperties) {
   return (
     <div>
       <h1 className="text-2xl font-bold mb-4">Summary</h1>
-      <FreshnessWidget client={client} />
+      <div className="flex flex-wrap gap-2 mb-3">
+        <FreshnessWidget client={client} />
+        <LastPostWidget client={client} />
+      </div>
       <PeriodSelector value={period} onChange={setPeriod} />
 
       {data === null && <Spinner />}

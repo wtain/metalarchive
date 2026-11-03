@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 
-from storage_client.models import BatchRun, Post, PostMetric, Subscriber
+from storage_client.models import BatchRun, Post, PostHeader, PostMetric, Subscriber
 
 
 def _seed(db_session):
@@ -79,3 +79,25 @@ def test_freshness_returns_latest_run_as_utc(client, db_session):
 
 def test_freshness_without_runs(client, db_session):
     assert client.get("/api/reports/freshness").json() == {"as_of": None}
+
+
+def test_last_post_is_most_recently_published(client, db_session):
+    db_session.add_all([Post(id=1, text="Older"), Post(id=2, text="Newest"), Post(id=3, text="Middle")])
+    db_session.add(BatchRun(id=1, timestamp=datetime(2026, 1, 10)))
+    db_session.add_all([
+        PostMetric(post_id=1, run_id=1, timestamp=datetime(2026, 1, 1, 8, 0)),
+        PostMetric(post_id=2, run_id=1, timestamp=datetime(2026, 1, 9, 12, 30)),
+        PostMetric(post_id=3, run_id=1, timestamp=datetime(2026, 1, 5, 8, 0)),
+    ])
+    db_session.add(PostHeader(post_id=2, title="Fresh title"))
+    db_session.commit()
+
+    assert client.get("/api/reports/last-post").json() == {
+        "post_id": 2,
+        "title": "Fresh title",
+        "published_at": "2026-01-09T12:30:00+00:00",
+    }
+
+
+def test_last_post_without_posts(client, db_session):
+    assert client.get("/api/reports/last-post").json() == {"post_id": None, "title": None, "published_at": None}

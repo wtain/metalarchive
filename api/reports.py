@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session, aliased
 
 from daily_digest import get_last_run, get_subscribers_diffs, get_post_diffs
 from db.session import get_db
-from storage_client.models import Post, PostMetric, BatchRun, Subscriber
+from storage_client.models import Post, PostHeader, PostMetric, BatchRun, Subscriber
 from storage_client.posts import hydrate_posts
 from storage_client.subscribers import get_subscriber_changes
 
@@ -94,6 +94,26 @@ def _as_utc(timestamp: datetime) -> datetime:
 def get_freshness(db: Session = Depends(get_db)):
     latest = db.query(func.max(BatchRun.timestamp)).scalar()
     return {"as_of": _as_utc(latest) if latest else None}
+
+
+@router.get("/last-post")
+def get_last_post(db: Session = Depends(get_db)):
+    # A post's publication time is its earliest PostMetric.timestamp (the
+    # Telegram message date, repeated on every batch's row).
+    published = (
+        db.query(PostMetric.post_id, func.min(PostMetric.timestamp).label("published_at"))
+        .group_by(PostMetric.post_id)
+        .order_by(func.min(PostMetric.timestamp).desc())
+        .first()
+    )
+    if published is None:
+        return {"post_id": None, "title": None, "published_at": None}
+    title = db.query(PostHeader.title).filter(PostHeader.post_id == published.post_id).scalar()
+    return {
+        "post_id": published.post_id,
+        "title": title,
+        "published_at": _as_utc(published.published_at),
+    }
 
 
 PERIOD_TO_DAYS = {"daily": 1, "weekly": 7, "monthly": 30}

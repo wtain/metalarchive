@@ -1,21 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { Card } from "./ui/card";
 import { SMMetricsClient } from "@/client/SMMetricsClient";
+import { formatRelativeTime } from "@/utils/relativeTime";
 
 const REFRESH_INTERVAL_MS = 60_000;
 // The scraper runs every 15 minutes; well past that, the data is stale.
 const STALE_AFTER_MINUTES = 45;
 
-function plural(n: number, unit: string): string {
-  return `${n} ${unit}${n === 1 ? "" : "s"}`;
-}
-
 function formatAge(minutes: number): string {
-  if (minutes < 1) return "just now";
-  if (minutes < 60) return `${plural(minutes, "minute")} ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${plural(hours, "hour")} ago`;
-  return `${plural(Math.floor(hours / 24), "day")} ago`;
+  return minutes < 1 ? "just now" : formatRelativeTime(minutes * 60_000);
 }
 
 export default function FreshnessWidget({ client }: { client: SMMetricsClient }) {
@@ -39,7 +32,7 @@ export default function FreshnessWidget({ client }: { client: SMMetricsClient })
   const stale = minutes > STALE_AFTER_MINUTES;
 
   return (
-    <Card className={`shadow-sm px-3 py-2 mb-3 ${stale ? "border-amber-400 bg-amber-50" : ""}`}>
+    <Card className={`shadow-sm px-3 py-2 ${stale ? "border-amber-400 bg-amber-50" : ""}`}>
       <div className="flex flex-wrap items-baseline gap-x-3">
         <span className={`text-lg font-bold ${stale ? "text-amber-700" : "text-green-700"}`}>
           Refreshed {formatAge(minutes)}

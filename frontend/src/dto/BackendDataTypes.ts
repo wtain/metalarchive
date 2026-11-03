@@ -122,6 +122,12 @@ export interface Summary {
     comments?: MetricSummary;
 }
 
+export interface LastPost {
+    post_id: number | null;
+    title: string | null;
+    published_at: string | null;
+}
+
 export interface Freshness {
     as_of: string | null;
 }
